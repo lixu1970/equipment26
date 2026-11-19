@@ -106,6 +106,8 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(11,9
   background:#f7f9fc;border:1px solid #e6ecf4;border-radius:12px;padding:10px 12px}
 .stockout b{color:var(--green)}
 .stockout .miss{color:var(--warn);font-weight:700}
+.stockout .small{font-size:15px;color:var(--ink2)}
+.small-hint{font-size:15px;color:var(--ink2);margin:0;line-height:1.35}
 
 /* ---------- 横屏：只重排，不缩小字号 ---------- */
 @media (orientation:landscape){
@@ -176,7 +178,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(11,9
          autocapitalize="characters" spellcheck="false" placeholder="初始编号">
   <div class="err" id="err"></div>
   <button class="btn primary" id="go">查询</button>
-  <button class="btn ghost" id="locBtn">按原存放地点筛选</button>
+  <button class="btn ghost" id="locBtn">按现存放位置筛选</button>
   <button class="btn ghost" id="labBtn">按实验室核查</button>
   <button class="btn ghost" id="stockBtn">盘点录入</button>
   <div class="ver count"></div>
@@ -209,7 +211,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(11,9
 <section class="screen" id="sloc">
   <div class="top">
     <button class="back" id="backLoc">‹</button>
-    <div class="code">按原存放地点</div>
+    <div class="code">按现存放位置</div>
   </div>
   <div class="locsearch"><input type="text" id="locq" placeholder="搜地点名" autocomplete="off"></div>
   <div class="locpick" id="locList"></div>
@@ -241,8 +243,11 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(11,9
     <div class="code">盘点录入</div>
   </div>
   <p class="hint">一行一个「设备编号」（铭牌上的那串，照片识别结果可直接粘）</p>
-  <textarea id="stockIn" placeholder="071199-54&#10;071199-55"></textarea>
-  <button class="btn primary" id="stockGo">标记「无盘亏」</button>
+  <input type="file" id="camIn" accept="image/*" capture="environment" hidden>
+  <button class="btn primary" id="snapBtn">拍照识别编号</button>
+  <p class="small-hint">对着标签拍，让编号那行占满画面最准；认不出就把编号贴到下面框里手动标。</p>
+  <textarea id="stockIn" placeholder="也可以直接把编号贴这里（一行一个）"></textarea>
+  <button class="btn" id="stockGo">标记「无盘亏」</button>
   <button class="btn green" id="stockDl">更新下载</button>
   <div class="stockout" id="stockOut">还没标记。</div>
   <div class="ver"></div>
@@ -293,7 +298,7 @@ const H=DATA.headers;
 const I={};H.forEach((h,i)=>I[h]=i);
 /* 原表表头与数据列整体错开一列：序号值在第 1 列(A)，表头却标在第 2 列(B)。 */
 if(H[0]==='' && H[1]==='序号') I['序号']=0;
-const VER='v2.10 · 2026-11-19';
+const VER='v2.13 · 2026-11-19';
 const DATA_DATE='2026-11-19';
 document.querySelectorAll('.ver').forEach(el=>{el.textContent=el.classList.contains('count')?VER+' · 共 '+ROWS.length+' 台 · 数据 '+DATA_DATE:VER});
 const Q=H.indexOf('后备注');
@@ -363,7 +368,6 @@ function openDetail(i){
     +field('取得日期',esc(get(r,'取得日期')))
     +field('账面价值',esc(get(r,'账面价值')))
     +field('所属专业',esc(get(r,'所属专业')),true)
-    +field('原存放地点',esc(get(r,'原存放地点')))
     +'<div class="f note wide" id="noteBox"><dt>后备注</dt><dd id="noteVal">'+(note?esc(note):'<span class="empty">（未填写）</span>')+'</dd></div>';
   $('#edit').textContent='修改';
   $('#save').disabled=!dirty;
@@ -538,6 +542,10 @@ async function exportXlsx(){
   return zipBuild(out);
 }
 async function exportNow(){
+  const n=Object.keys(notes).length;
+  if(!n&&!confirm('现在一条备注都没有，导出的表和原表一样。先去「盘点录入」把编号贴上、点「标记「无盘亏」」，再来下载。仍要下载吗？')){
+    return false;
+  }
   try{
     const blob=await exportXlsx();
     download(blob,'设备26-带后备注-'+stamp()+'.xlsx');
@@ -560,7 +568,7 @@ function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').repl
 
 /* ---------------- 按原存放地点 ---------------- */
 const locMap={};
-ROWS.forEach((r,i)=>{const v=get(r,'原存放地点').trim();if(!v)return;(locMap[v]=locMap[v]||[]).push(i)});
+ROWS.forEach((r,i)=>{const v=get(r,'现存放位置20260123').trim();if(!v)return;(locMap[v]=locMap[v]||[]).push(i)});
 const LOCS=Object.keys(locMap).sort((a,b)=>a.localeCompare(b,'zh-Hans-CN'));
 
 function renderLocs(q){
@@ -604,8 +612,7 @@ function detailFields(i){
    +field('规格型号',esc(get(r,'规格型号')))
    +field('取得日期',esc(get(r,'取得日期')))
    +field('账面价值',esc(get(r,'账面价值')))
-   +field('所属专业',esc(get(r,'所属专业')),true)
-   +field('原存放地点',esc(get(r,'原存放地点')));
+   +field('所属专业',esc(get(r,'所属专业')),true);
 }
 function detailNoteHTML(id,val){
   return '<div class="f note wide"><dt>后备注</dt><dd>'
@@ -747,8 +754,6 @@ function noteWithCheck(note,st){
 const PEND={}, GRP={};
 ROWS.forEach((r,i)=>{
   let loc=get(r,'现存放位置20260123').trim();
-  const orig=get(r,'原存放地点').trim();
-  if(loc&&!LABRE.test(loc)&&LABRE.test(orig)){loc=orig;PEND[i]=1}
   if(!loc)loc='（未填存放位置）';
   (GRP[loc]=GRP[loc]||[]).push(i);
 });
@@ -799,9 +804,8 @@ function renderCk(){
   const i=gIdx[gPos],r=ROWS[i],st=stChk(r,i);
   $('#ckTitle').innerHTML=esc(gLoc)+(LABRE.test(gLoc)?' <span class="tag">实验室</span>':'');
   setBar();
-  const loc=get(r,'现存放位置20260123').trim(),orig=get(r,'原存放地点').trim();
-  const meta=['初始编号 '+(get(r,'初始编号')||'—'),'现存放 '+loc,
-    (orig&&orig!==loc)?'原存放 '+orig:''].filter(Boolean);
+  const loc=get(r,'现存放位置20260123').trim();
+  const meta=['初始编号 '+(get(r,'初始编号')||'—'),'现存放 '+loc].filter(Boolean);
   $('#ckScroll').innerHTML=
      '<div class="ckcard">'
     +'<div class="ckpos"><span class="ckno">序号 '+esc(get(r,'序号')||'—')+'</span>'
@@ -963,6 +967,88 @@ function openStock(){
   show('#sstock');
 }
 
+/* ---------------- 拍照识别编号（tesseract.js，按需加载） ---------------- */
+const TESS_URL='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+let tessLoading=null, workerP=null;
+function loadTesseract(){
+  if(window.Tesseract)return Promise.resolve();
+  if(tessLoading)return tessLoading;
+  tessLoading=new Promise((res,rej)=>{
+    const sc=document.createElement('script');
+    sc.src=TESS_URL;
+    sc.onload=()=>res();
+    sc.onerror=()=>{tessLoading=null;rej(new Error('识别库加载失败（可能要联网）'))};
+    document.head.appendChild(sc);
+  });
+  return tessLoading;
+}
+function getWorker(){
+  if(workerP)return workerP;
+  workerP=(async()=>{
+    await loadTesseract();
+    const w=await Tesseract.createWorker('eng');
+    await w.setParameters({tessedit_char_whitelist:'0123456789-()（） '});
+    return w;
+  })();
+  workerP.catch(()=>{workerP=null});
+  return workerP;
+}
+function candidatesFromText(t){
+  const s=String(t||'').replace(/[ \t]+/g,'');
+  const out=[];
+  const re=/(\d{3,6})[-—－]?[（(]?(\d{1,3})[）)]?/g;
+  let m;
+  while((m=re.exec(s))){out.push(m[1]+'-'+m[2])}
+  const re2=/\d{6,12}/g;
+  while((m=re2.exec(s))){out.push(m[0])}
+  return out;
+}
+function matchFromText(t){
+  const hits={};
+  candidatesFromText(t).forEach(c=>{
+    lookupCode(c).forEach(i=>{hits[i]=(hits[i]||0)+1});
+  });
+  return Object.keys(hits).map(Number);
+}
+async function scanFile(file){
+  const w=await getWorker();
+  const url=URL.createObjectURL(file);
+  try{
+    const r=await w.recognize(url);
+    return (r&&r.data&&r.data.text)||'';
+  }finally{URL.revokeObjectURL(url)}
+}
+async function onPickPhoto(file){
+  if(!file)return;
+  const out=$('#stockOut');
+  out.innerHTML='识别中…（第一次会下载约 2MB 识别库，请稍等）';
+  let text='';
+  try{
+    text=await scanFile(file);
+  }catch(err){
+    out.innerHTML='<span class="miss">识别失败：'+esc((err&&err.message)||err)+'</span><br>可以点「拍照识别编号」重拍，或把编号贴到上面的框里手动标。';
+    return;
+  }
+  const idxs=matchFromText(text);
+  if(idxs.length===1){
+    const i=idxs[0],r=ROWS[i];
+    addMark(r,i);
+    localStorage.setItem(KEY,JSON.stringify(notes));
+    out.innerHTML='<b>此台已录入 ✓</b><br>'+esc(get(r,'初始编号'))+' · '+esc(get(r,'资产名称'))
+      +'<br><span class="small">序号 '+esc(get(r,'序号'))+' · 现存放 '+esc(get(r,'现存放位置20260123'))+'</span>';
+    return;
+  }
+  if(idxs.length>1){
+    out.innerHTML='<span class="miss">认到了 '+idxs.length+' 台，不敢替你定：</span><br>'
+      +idxs.map(i=>'· '+esc(get(ROWS[i],'初始编号'))+' · '+esc(get(ROWS[i],'资产名称'))).join('<br>')
+      +'<br>把要的那台编号贴到上面框里，点「标记「无盘亏」」。';
+    return;
+  }
+  out.innerHTML='<span class="miss">没认出编号</span><br>识别到的内容：<br>'
+    +'<span class="small">'+esc(text.replace(/\s+/g,' ').slice(0,120))+'</span><br>'
+    +'重拍一张（正对标签、拍清编号那行），或用上面的大框手动贴。';
+}
+
 /* 事件 */
 $('#go').onclick=search;
 $('#code').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();search()}});
@@ -996,6 +1082,12 @@ $('#stockBtn').onclick=openStock;
 $('#backStock').onclick=()=>{show('#s1');setTimeout(()=>$('#code').focus(),80)};
 $('#stockGo').onclick=runStock;
 $('#stockDl').onclick=async()=>{if(await exportNow())flash('#stockDl','已下载')};
+$('#snapBtn').onclick=()=>$('#camIn').click();
+$('#camIn').addEventListener('change',e=>{
+  const f=e.target.files&&e.target.files[0];
+  e.target.value='';
+  if(f)onPickPhoto(f);
+});
 $('#backLab').onclick=()=>{show('#s1');setTimeout(()=>$('#code').focus(),80)};
 $('#labq').addEventListener('input',e=>renderLabs(e.target.value));
 $('#backCk').onclick=backLab;
