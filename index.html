@@ -303,7 +303,7 @@ const H=DATA.headers;
 const I={};H.forEach((h,i)=>I[h]=i);
 /* 原表表头与数据列整体错开一列：序号值在第 1 列(A)，表头却标在第 2 列(B)。 */
 if(H[0]==='' && H[1]==='序号') I['序号']=0;
-const VER='v2.20 · 2026-11-19';
+const VER='v2.21 · 2026-11-19';
 const DATA_DATE='2026-11-19';
 document.querySelectorAll('.ver').forEach(el=>{el.textContent=el.classList.contains('count')?VER+' · 共 '+ROWS.length+' 台 · 数据 '+DATA_DATE:VER});
 const Q=H.indexOf('后备注');
@@ -864,7 +864,7 @@ function flagHtml(i,st){
   const undoable=(st&&(rkey(ROWS[i],i) in chkPrev));
   const a=st?(undoable
       ?'<span class="tag" data-act="undo" title="点一下撤销这台的标记">已记 '+esc(label)+' ×</span>'
-      :'<span class="tag">已记 '+esc(label)+'</span>')
+      :'<span class="tag" data-act="undo" title="这条结论是表里带来的，点一下看怎么改">已记 '+esc(label)+'</span>')
     :'<span class="tag" style="background:#eef1f6;color:#4a5460;border-color:#d8dee6">未查</span>';
   return a+(PEND[i]?'<span class="tag warn">位置待核</span>':'');
 }
