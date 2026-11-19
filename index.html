@@ -298,7 +298,7 @@ const H=DATA.headers;
 const I={};H.forEach((h,i)=>I[h]=i);
 /* 原表表头与数据列整体错开一列：序号值在第 1 列(A)，表头却标在第 2 列(B)。 */
 if(H[0]==='' && H[1]==='序号') I['序号']=0;
-const VER='v2.16 · 2026-11-19';
+const VER='v2.17 · 2026-11-19';
 const DATA_DATE='2026-11-19';
 document.querySelectorAll('.ver').forEach(el=>{el.textContent=el.classList.contains('count')?VER+' · 共 '+ROWS.length+' 台 · 数据 '+DATA_DATE:VER});
 const Q=H.indexOf('后备注');
@@ -370,7 +370,6 @@ function openDetail(i){
     +field('所属专业',esc(get(r,'所属专业')),true)
     +'<div class="f note wide" id="noteBox"><dt>后备注</dt><dd id="noteVal">'+(note?esc(note):'<span class="empty">（未填写）</span>')+'</dd></div>';
   $('#edit').textContent='修改';
-  $('#save').disabled=!dirty;
   show('#s2');
 }
 
@@ -383,7 +382,7 @@ function startEdit(){
    +esc(note)+'</textarea>';
   $('#edit').textContent='取消修改';
   const ta=$('#ta');
-  ta.addEventListener('input',()=>{dirty=true;$('#save').disabled=false});
+  ta.addEventListener('input',()=>{if(cur>=0)setNote(ROWS[cur],cur,ta.value);dirty=true;autoSave()});
   ta.focus();
   try{ta.setSelectionRange(ta.value.length,ta.value.length)}catch(e){}
 }
@@ -403,7 +402,7 @@ function save(){
     setNote(ROWS[cur],cur,v);
   }
   localStorage.setItem(KEY,JSON.stringify(notes));
-  dirty=false;$('#save').disabled=true;
+  dirty=false;
   if(editing){endEdit(true)}
   flash('#save','已保存');
 }
@@ -599,7 +598,7 @@ function openLoc(l){
       +'</div>';
   }).join('');
   $('#devList').querySelectorAll('.devnote').forEach(t=>{t.value=noteOf(ROWS[+t.dataset.i],+t.dataset.i)});
-  $('#editAll').textContent='查明细';$('#saveAll').disabled=true;$('#devHint').hidden=true;
+  $('#editAll').textContent='查明细';$('#devHint').hidden=true;
   show('#sdev');
 }
 
@@ -682,7 +681,7 @@ function openDevDetail(i){
   pane.hidden=false;pane.scrollTop=0;
   $('#editAll').textContent='收起明细';
   $('#devTitle').textContent=get(ROWS[i],'资产名称')||('序号 '+get(ROWS[i],'序号'));
-  dirty=false;$('#saveAll').disabled=true;
+  dirty=false;
 }
 function collapseDev(){
   if(devIdx>=0){
@@ -700,7 +699,7 @@ function collapseDev(){
   $('#editAll').textContent='查明细';
   $('#devTitle').textContent=(curLoc||'')+' · '+((locMap[curLoc]||[]).length)+' 台';
   $('#devList').scrollTop=devScroll;
-  dirty=false;$('#saveAll').disabled=true;
+  dirty=false;
 }
 function toggleDevDetail(){
   if(devMode==='detail'){collapseDev();return}
@@ -718,7 +717,7 @@ function saveAll(){
     });
   }
   localStorage.setItem(KEY,JSON.stringify(notes));
-  dirty=false;$('#saveAll').disabled=true;editing=false;
+  dirty=false;editing=false;
   if(devMode==='detail'){
     const box=$('#devList').querySelector('.devnote[data-i="'+devIdx+'"]');
     if(box)box.value=noteOf(ROWS[devIdx],devIdx);
@@ -818,7 +817,6 @@ function renderCk(){
     +'</div>';
   paintActs(st);
   $('#editCk').textContent=(ckMode==='detail')?'收起明细':'查明细';
-  $('#saveCk').disabled=!ckDirty;
 }
 function markStatus(st){
   const i=gIdx[gPos],r=ROWS[i],ta=$('#ckNote');
@@ -826,7 +824,7 @@ function markStatus(st){
   setNote(r,i,nv);setChk(r,i,st);
   localStorage.setItem(KEY,JSON.stringify(notes));
   if(ta)ta.value=nv;
-  ckDirty=false;$('#saveCk').disabled=true;
+  ckDirty=false;
   const f=$('#ckFlag');if(f)f.innerHTML=flagHtml(i,st);
   setBar();paintActs(st);
 }
@@ -839,7 +837,7 @@ function paintActs(st){
 function commitNote(){
   const i=gIdx[gPos],r=ROWS[i],ta=$('#ckNote');
   if(ta){setNote(r,i,ta.value);localStorage.setItem(KEY,JSON.stringify(notes))}
-  ckDirty=false;$('#saveCk').disabled=true;
+  ckDirty=false;
 }
 function ckAct(a){
   if(a==='in'||a==='out'){markStatus(a==='in'?'在位':'不在位');return}
@@ -866,7 +864,7 @@ function openCkDetail(){
   const ib=$('#sck .inbox'),nv=$('#sck .cknav3');
   if(ib)ib.hidden=true;if(nv)nv.hidden=true;
   $('#editCk').textContent='收起明细';
-  ckDirty=false;$('#saveCk').disabled=true;
+  ckDirty=false;
 }
 function collapseCk(){
   if(ckDidx>=0){
@@ -1096,10 +1094,30 @@ $('#devList').addEventListener('click',e=>{
 });
 $('#saveAll').onclick=saveAll;
 $('#dlAll').onclick=async()=>{if(dirty)saveAll();if(await exportNow())flash('#dlAll','已下载')};
-$('#devList').addEventListener('input',e=>{if(e.target.classList.contains('devnote')){dirty=true;$('#saveAll').disabled=false}});
+let autoT=0;
+function autoSave(){
+  clearTimeout(autoT);
+  autoT=setTimeout(()=>{
+    try{localStorage.setItem(KEY,JSON.stringify(notes));localStorage.setItem(CHKKEY,JSON.stringify(chk))}catch(e){}
+    dirty=false;ckDirty=false;
+  },350);
+}
+$('#devList').addEventListener('input',e=>{
+  if(!e.target.classList.contains('devnote'))return;
+  const i=+e.target.dataset.i;setNote(ROWS[i],i,e.target.value);
+  dirty=true;autoSave();
+});
 $('#devList').addEventListener('focusin',e=>{if(e.target.classList.contains('devnote'))lastNote=e.target});
-$('#devDetail').addEventListener('input',e=>{if(e.target.id==='devDNote'){dirty=true;$('#saveAll').disabled=false}});
-$('#ckDetail').addEventListener('input',e=>{if(e.target.id==='ckDNote'){ckDirty=true;$('#saveCk').disabled=false}});
+$('#devDetail').addEventListener('input',e=>{
+  if(e.target.id!=='devDNote')return;
+  if(devIdx>=0)setNote(ROWS[devIdx],devIdx,e.target.value);
+  dirty=true;autoSave();
+});
+$('#ckDetail').addEventListener('input',e=>{
+  if(e.target.id!=='ckDNote')return;
+  if(ckDidx>=0)setNote(ROWS[ckDidx],ckDidx,e.target.value);
+  ckDirty=true;autoSave();
+});
 $('#labBtn').onclick=openLab;
 $('#stockBtn').onclick=openStock;
 $('#backStock').onclick=()=>{show('#s1');setTimeout(()=>$('#code').focus(),80)};
@@ -1130,7 +1148,11 @@ $('#sck').addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');if(b)ckAct(b.dataset.act);
 });
 $('#sck').addEventListener('input',e=>{
-  if(e.target.id==='ckNote'){ckDirty=true;$('#saveCk').disabled=false}
+  if(e.target.id==='ckNote'){
+    const i=gIdx[gPos];
+    if(i!=null)setNote(ROWS[i],i,e.target.value);
+    ckDirty=true;autoSave();
+  }
 });
 setTimeout(()=>$('#code').focus(),120);
 </script>
