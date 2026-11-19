@@ -243,6 +243,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(11,9
   <p class="hint">一行一个「设备编号」（铭牌上的那串，照片识别结果可直接粘）</p>
   <textarea id="stockIn" placeholder="071199-54&#10;071199-55"></textarea>
   <button class="btn primary" id="stockGo">标记「无盘亏」</button>
+  <button class="btn green" id="stockDl">更新下载</button>
   <div class="stockout" id="stockOut">还没标记。</div>
   <div class="ver"></div>
 </section>
@@ -292,7 +293,7 @@ const H=DATA.headers;
 const I={};H.forEach((h,i)=>I[h]=i);
 /* 原表表头与数据列整体错开一列：序号值在第 1 列(A)，表头却标在第 2 列(B)。 */
 if(H[0]==='' && H[1]==='序号') I['序号']=0;
-const VER='v2.8 · 2026-11-19';
+const VER='v2.10 · 2026-11-19';
 const DATA_DATE='2026-11-19';
 document.querySelectorAll('.ver').forEach(el=>{el.textContent=el.classList.contains('count')?VER+' · 共 '+ROWS.length+' 台 · 数据 '+DATA_DATE:VER});
 const Q=H.indexOf('后备注');
@@ -957,6 +958,8 @@ function runStock(){
 function openStock(){
   $('#stockIn').value='';
   $('#stockOut').innerHTML='还没标记。';
+  const v=$('#sstock .ver');
+  if(v)v.textContent=VER+' · 共 '+ROWS.length+' 台 · 数据 '+DATA_DATE;
   show('#sstock');
 }
 
@@ -992,6 +995,7 @@ $('#labBtn').onclick=openLab;
 $('#stockBtn').onclick=openStock;
 $('#backStock').onclick=()=>{show('#s1');setTimeout(()=>$('#code').focus(),80)};
 $('#stockGo').onclick=runStock;
+$('#stockDl').onclick=async()=>{if(await exportNow())flash('#stockDl','已下载')};
 $('#backLab').onclick=()=>{show('#s1');setTimeout(()=>$('#code').focus(),80)};
 $('#labq').addEventListener('input',e=>renderLabs(e.target.value));
 $('#backCk').onclick=backLab;
