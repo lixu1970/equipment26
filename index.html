@@ -242,7 +242,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(11,9
     <button class="back" id="backStock">‹</button>
     <div class="code">盘点录入</div>
   </div>
-  <p class="hint">一行一个「设备编号」（铭牌上的那串，照片识别结果可直接粘）</p>
+  <p class="hint">对着标签拍照，认到就直接标；也可以把「设备编号」贴到下面框里手动标。</p>
   <input type="file" id="camIn" accept="image/*" capture="environment" hidden>
   <button class="btn primary" id="snapBtn">拍照识别编号</button>
   <p class="small-hint">对着标签拍，让编号那行占满画面最准；认不出就把编号贴到下面框里手动标。</p>
@@ -298,7 +298,7 @@ const H=DATA.headers;
 const I={};H.forEach((h,i)=>I[h]=i);
 /* 原表表头与数据列整体错开一列：序号值在第 1 列(A)，表头却标在第 2 列(B)。 */
 if(H[0]==='' && H[1]==='序号') I['序号']=0;
-const VER='v2.13 · 2026-11-19';
+const VER='v2.14 · 2026-11-19';
 const DATA_DATE='2026-11-19';
 document.querySelectorAll('.ver').forEach(el=>{el.textContent=el.classList.contains('count')?VER+' · 共 '+ROWS.length+' 台 · 数据 '+DATA_DATE:VER});
 const Q=H.indexOf('后备注');
@@ -1010,6 +1010,16 @@ function matchFromText(t){
   });
   return Object.keys(hits).map(Number);
 }
+let lastScan=null;
+function undoScan(){
+  if(!lastScan)return;
+  const i=lastScan.i,r=ROWS[i],prev=lastScan.prev||'';
+  if(prev)setNote(r,i,prev);else delete notes[rkey(r,i)];
+  localStorage.setItem(KEY,JSON.stringify(notes));
+  $('#stockOut').innerHTML='已撤销：'+esc(get(r,'初始编号'))+' · '+esc(get(r,'资产名称'))
+    +' 的「'+MARK+'」已撤掉，可以重拍。';
+  lastScan=null;
+}
 async function scanFile(file){
   const w=await getWorker();
   const url=URL.createObjectURL(file);
@@ -1032,10 +1042,14 @@ async function onPickPhoto(file){
   const idxs=matchFromText(text);
   if(idxs.length===1){
     const i=idxs[0],r=ROWS[i];
+    lastScan={i:i,prev:noteOf(r,i)};
     addMark(r,i);
     localStorage.setItem(KEY,JSON.stringify(notes));
     out.innerHTML='<b>此台已录入 ✓</b><br>'+esc(get(r,'初始编号'))+' · '+esc(get(r,'资产名称'))
-      +'<br><span class="small">序号 '+esc(get(r,'序号'))+' · 现存放 '+esc(get(r,'现存放位置20260123'))+'</span>';
+      +'<br><span class="small">序号 '+esc(get(r,'序号'))+' · 现存放 '+esc(get(r,'现存放位置20260123'))+'</span>'
+      +'<br><button class="btn ghost" id="scanUndo" style="margin-top:8px;height:48px;font-size:16px">不是这台？撤销</button>';
+    const b=$('#scanUndo');
+    if(b)b.onclick=undoScan;
     return;
   }
   if(idxs.length>1){
