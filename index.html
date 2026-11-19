@@ -96,6 +96,17 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(11,9
 .devnote.editing{border-color:var(--accent);box-shadow:0 0 0 3px rgba(11,98,214,.12)}
 #devTitle{white-space:normal;line-height:1.25;font-size:20px}
 
+/* ---------- 盘点录入 ---------- */
+#sstock{gap:8px}
+#stockIn{flex:0 0 auto;height:132px;border:2px solid var(--line);border-radius:14px;padding:12px 14px;
+  font:inherit;font-size:18px;line-height:1.4;color:var(--ink);background:#fff;resize:none;width:100%;
+  -webkit-user-select:text;user-select:text}
+#stockIn:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(11,98,214,.14);outline:none}
+.stockout{flex:1;min-height:0;overflow:auto;font-size:17px;line-height:1.5;color:var(--ink);
+  background:#f7f9fc;border:1px solid #e6ecf4;border-radius:12px;padding:10px 12px}
+.stockout b{color:var(--green)}
+.stockout .miss{color:var(--warn);font-weight:700}
+
 /* ---------- 横屏：只重排，不缩小字号 ---------- */
 @media (orientation:landscape){
   :root{--fs-base:20px}
@@ -167,6 +178,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(11,9
   <button class="btn primary" id="go">查询</button>
   <button class="btn ghost" id="locBtn">按原存放地点筛选</button>
   <button class="btn ghost" id="labBtn">按实验室核查</button>
+  <button class="btn ghost" id="stockBtn">盘点录入</button>
   <div class="ver count"></div>
 </section>
 
@@ -222,6 +234,19 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(11,9
   <div class="ver"></div>
 </section>
 
+<!-- 盘点录入：按铭牌编号标「无盘亏」 -->
+<section class="screen" id="sstock">
+  <div class="top">
+    <button class="back" id="backStock">‹</button>
+    <div class="code">盘点录入</div>
+  </div>
+  <p class="hint">一行一个「设备编号」（铭牌上的那串，照片识别结果可直接粘）</p>
+  <textarea id="stockIn" placeholder="071199-54&#10;071199-55"></textarea>
+  <button class="btn primary" id="stockGo">标记「无盘亏」</button>
+  <div class="stockout" id="stockOut">还没标记。</div>
+  <div class="ver"></div>
+</section>
+
 <!-- 按实验室/场地核查：分组列表 -->
 <section class="screen" id="slab">
   <div class="top">
@@ -267,7 +292,7 @@ const H=DATA.headers;
 const I={};H.forEach((h,i)=>I[h]=i);
 /* 原表表头与数据列整体错开一列：序号值在第 1 列(A)，表头却标在第 2 列(B)。 */
 if(H[0]==='' && H[1]==='序号') I['序号']=0;
-const VER='v2.7 · 2026-11-19';
+const VER='v2.8 · 2026-11-19';
 const DATA_DATE='2026-11-19';
 document.querySelectorAll('.ver').forEach(el=>{el.textContent=el.classList.contains('count')?VER+' · 共 '+ROWS.length+' 台 · 数据 '+DATA_DATE:VER});
 const Q=H.indexOf('后备注');
@@ -865,6 +890,76 @@ function backLab(){
   renderLabs($('#labq').value);show('#slab');
 }
 
+/* ---------------- 盘点：按铭牌编号标「无盘亏」 ---------------- */
+const MARK='无盘亏';
+function normCode(v){
+  return String(v==null?'':v).replace(/（/g,'(').replace(/）/g,')')
+    .replace(/\s+/g,'').replace(/[－—–]/g,'-').toUpperCase();
+}
+function codeVariants(t){
+  const n=normCode(t);
+  const out=[];
+  const push=v=>{if(v&&out.indexOf(v)<0)out.push(v)};
+  push(n);
+  push(n.replace(/\(/g,'-').replace(/\)/g,'').replace(/-+/g,'-'));
+  push(n.replace(/[^0-9A-Z]/g,''));
+  return out;
+}
+const CODEIDX={};
+ROWS.forEach((r,i)=>{
+  const add=(k)=>{if(!k)return;const a=CODEIDX[k]=CODEIDX[k]||[];if(a.indexOf(i)<0)a.push(i)};
+  const c=get(r,'初始编号');
+  if(c){const n=normCode(c);add(n);add(n.replace(/\(/g,'-').replace(/\)/g,'').replace(/-+/g,'-'));add(n.replace(/[^0-9A-Z]/g,''))}
+  const a=get(r,'资产编号');
+  if(a){const n=normCode(a);add(n);add(n.replace(/[^0-9A-Z]/g,''))}
+});
+function lookupCode(t){
+  for(const v of codeVariants(t)){
+    if(CODEIDX[v])return CODEIDX[v];
+  }
+  return [];
+}
+function hasMark(r,i){
+  return String(noteOf(r,i)).split('\n').some(l=>l.trim()===MARK);
+}
+function addMark(r,i){
+  if(hasMark(r,i))return false;
+  const cur=String(noteOf(r,i)||'').split('\n').map(l=>l.trim()).filter(Boolean);
+  cur.push(MARK);
+  setNote(r,i,cur.join('\n'));
+  return true;
+}
+function runStock(){
+  const raw=$('#stockIn').value||'';
+  const toks=raw.split(/[\n,，、;；\t ]+/).map(t=>t.trim()).filter(Boolean);
+  if(!toks.length){$('#stockOut').innerHTML='<span class="miss">先贴编号</span>';return}
+  let marked=0,done=0,miss=[],multi=[],hit=[];
+  toks.forEach(t=>{
+    const idxs=lookupCode(t);
+    if(!idxs.length){miss.push(t);return}
+    idxs.forEach(i=>{
+      const r=ROWS[i];
+      hit.push(esc(get(r,'初始编号'))+' · '+esc(get(r,'资产名称')));
+      if(addMark(r,i))marked++;else done++;
+    });
+    if(idxs.length>1)multi.push(t);
+  });
+  localStorage.setItem(KEY,JSON.stringify(notes));
+  const allDup=[...new Set(hit)].length!==hit.length;
+  let html='<b>已标记 '+marked+' 台</b>';
+  if(done)html+='，之前已标 '+done+' 台（跳过）';
+  if(multi.length)html+='，同编号多台：'+multi.map(esc).join('、');
+  if(miss.length)html+='<br><span class="miss">没对上 '+miss.length+' 条：'+miss.map(esc).join('、')+'</span>';
+  if(hit.length)html+='<br><br>对上的是：<br>'+hit.map(h=>'· '+h).join('<br>');
+  html+='<br><br>合计本机已标「'+MARK+'」'+ROWS.reduce((a,r,i)=>a+(hasMark(r,i)?1:0),0)+' 台；导出时写在最后一列。';
+  $('#stockOut').innerHTML=html;
+}
+function openStock(){
+  $('#stockIn').value='';
+  $('#stockOut').innerHTML='还没标记。';
+  show('#sstock');
+}
+
 /* 事件 */
 $('#go').onclick=search;
 $('#code').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();search()}});
@@ -894,6 +989,9 @@ $('#devList').addEventListener('focusin',e=>{if(e.target.classList.contains('dev
 $('#devDetail').addEventListener('input',e=>{if(e.target.id==='devDNote'){dirty=true;$('#saveAll').disabled=false}});
 $('#ckDetail').addEventListener('input',e=>{if(e.target.id==='ckDNote'){ckDirty=true;$('#saveCk').disabled=false}});
 $('#labBtn').onclick=openLab;
+$('#stockBtn').onclick=openStock;
+$('#backStock').onclick=()=>{show('#s1');setTimeout(()=>$('#code').focus(),80)};
+$('#stockGo').onclick=runStock;
 $('#backLab').onclick=()=>{show('#s1');setTimeout(()=>$('#code').focus(),80)};
 $('#labq').addEventListener('input',e=>renderLabs(e.target.value));
 $('#backCk').onclick=backLab;
