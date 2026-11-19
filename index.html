@@ -274,8 +274,8 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(11,9
   <div class="ckscroll" id="ckScroll"></div>
   <div class="detailpane" id="ckDetail" hidden></div>
   <div class="inbox">
-    <button class="btn" data-act="in">在位</button>
-    <button class="btn" data-act="out">不在位</button>
+    <button class="btn" data-act="in">未盘亏</button>
+    <button class="btn" data-act="out">盘亏</button>
   </div>
   <div class="cknav3">
     <button class="btn" data-act="prev">‹ 上一台</button>
@@ -298,7 +298,7 @@ const H=DATA.headers;
 const I={};H.forEach((h,i)=>I[h]=i);
 /* 原表表头与数据列整体错开一列：序号值在第 1 列(A)，表头却标在第 2 列(B)。 */
 if(H[0]==='' && H[1]==='序号') I['序号']=0;
-const VER='v2.15 · 2026-11-19';
+const VER='v2.16 · 2026-11-19';
 const DATA_DATE='2026-11-19';
 document.querySelectorAll('.ver').forEach(el=>{el.textContent=el.classList.contains('count')?VER+' · 共 '+ROWS.length+' 台 · 数据 '+DATA_DATE:VER});
 const Q=H.indexOf('后备注');
@@ -737,7 +737,7 @@ function backDev(){
 const LABRE=/实训室|实验室/, CHKKEY='eq26.check.v1';
 const TODAY=(()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');
   return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())})();
-const CHKMARK=/^核查 \d{4}-\d{2}-\d{2} (在位|不在位)$/;
+const CHKMARK=/^核查 \d{4}-\d{2}-\d{2} (在位|不在位|未盘亏|盘亏)$/;
 let chk={};
 try{Object.assign(chk,JSON.parse(localStorage.getItem(CHKKEY)||'{}')||{})}catch(e){}
 const isChk=(r,i)=>!!chk[rkey(r,i)];
@@ -747,7 +747,7 @@ function setChk(r,i,v){const k=rkey(r,i);if(v)chk[k]=v;else delete chk[k];
 /* 不在位写进「后备注」：保留原内容，替换旧核查行，不覆盖 */
 function noteWithCheck(note,st){
   const base=String(note==null?'':note).split('\n').filter(l=>!CHKMARK.test(l.trim())).join('\n').trim();
-  return st==='不在位'?[base,'核查 '+TODAY+' 不在位'].filter(Boolean).join('\n'):base;
+  return st==='不在位'?[base,'核查 '+TODAY+' 盘亏'].filter(Boolean).join('\n'):base;
 }
 
 /* 分组：按「现存放位置」；现存放不是实验室、但原存放是实验室的 7 台，归到原存放实验室并标「位置待核」 */
@@ -789,7 +789,8 @@ function openCk(l){
   renderCk();show('#sck');
 }
 function flagHtml(i,st){
-  const a=st?'<span class="tag">已记 '+esc(st)+'</span>'
+  const label=st==='在位'?'未盘亏':(st==='不在位'?'盘亏':st);
+  const a=st?'<span class="tag">已记 '+esc(label)+'</span>'
              :'<span class="tag" style="background:#eef1f6;color:#4a5460;border-color:#d8dee6">未查</span>';
   return a+(PEND[i]?'<span class="tag warn">位置待核</span>':'');
 }
