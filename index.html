@@ -76,10 +76,17 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(11,9
 .devno{font-size:14px;font-weight:800;color:var(--accent2);min-width:22px}
 .devname{font-size:18px;font-weight:700;flex:1;min-width:0;word-break:break-word}
 .devspec{font-size:14px;color:var(--ink2)}
-.devnote{width:100%;margin-top:8px;border:2px solid var(--line);border-radius:10px;
-  padding:8px 10px;font:inherit;font-size:16px;line-height:1.4;color:var(--ink);background:#fff;
-  resize:vertical;min-height:44px}
-.devnote[readonly]{background:#eef1f6;color:#3f4a57}
+.devnote{width:100%;margin-top:8px;border:2px solid var(--line);border-radius:12px;
+  padding:12px 14px;font:inherit;font-size:17px;line-height:1.45;color:var(--ink);background:#fff;
+  resize:vertical;min-height:88px;cursor:text;-webkit-user-select:text;user-select:text}
+.devnote:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(11,98,214,.16);background:#fff;outline:none}
+@keyframes eqpulse{0%{box-shadow:0 0 0 0 rgba(11,98,214,.55)}70%{box-shadow:0 0 0 14px rgba(11,98,214,0)}
+  100%{box-shadow:0 0 0 0 rgba(11,98,214,0)}}
+.devnote.pulse{border-color:var(--accent);border-width:3px;animation:eqpulse 1.2s ease-out 2}
+.hintbar{margin:6px 0 0;padding:8px 12px;border-radius:10px;background:#fff6e5;border:1px solid #f0d3ae;
+  color:#8a5008;font-size:16px;font-weight:700;line-height:1.35}
+.hintbar[hidden]{display:none}
+
 .devnote.editing{border-color:var(--accent);box-shadow:0 0 0 3px rgba(11,98,214,.12)}
 #devTitle{white-space:normal;line-height:1.25;font-size:20px}
 
@@ -120,7 +127,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(11,9
 .ckname{font-size:23px;font-weight:800;line-height:1.25;word-break:break-word;flex:1;min-width:0}
 .ckmeta{font-size:17px;color:var(--ink2);line-height:1.4;margin:6px 0 8px;word-break:break-word}
 .ckflag{display:flex;gap:8px;flex-wrap:wrap}
-.ckcard .devnote{min-height:52px;background:#fff}
+.ckcard .devnote{background:#fff}
 .inbox{display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:0 0 auto}
 .inbox .btn{height:66px;font-size:24px}
 .inbox .btn.on{outline:4px solid rgba(11,98,214,.22)}
@@ -134,7 +141,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(11,9
 #sck .ckcard{padding:10px 12px}
 #sck .ckname{font-size:21px}
 #sck .ckmeta{font-size:16px;margin:3px 0 5px}
-#sck .ckcard .devnote{min-height:52px;margin-top:6px}
+#sck .ckcard .devnote{margin-top:6px}
 #ckTitle{white-space:normal;line-height:1.25;font-size:20px}
 @media (orientation:landscape){
   .inbox .btn{height:58px;font-size:22px}
@@ -197,9 +204,10 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(11,9
     <button class="back" id="backDev">‹</button>
     <div class="code" id="devTitle">—</div>
   </div>
+  <div class="hintbar" id="devHint" hidden>点下面的备注框输入</div>
   <div class="devlist" id="devList"></div>
   <div class="actions-row">
-    <button class="btn" id="editAll">修改</button>
+    <button class="btn" id="editAll">改备注</button>
     <button class="btn green" id="saveAll">保存</button>
     <button class="btn" id="dlAll">更新下载</button>
     <button class="btn" id="backAll">返回</button>
@@ -236,7 +244,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(11,9
     <button class="btn" data-act="skip">跳过</button>
   </div>
   <div class="actions-row">
-    <button class="btn" id="editCk">修改</button>
+    <button class="btn" id="editCk">改备注</button>
     <button class="btn green" id="saveCk">保存</button>
     <button class="btn" id="dlCk">更新下载</button>
     <button class="btn" id="backCk2">返回</button>
@@ -251,7 +259,7 @@ const H=DATA.headers;
 const I={};H.forEach((h,i)=>I[h]=i);
 /* 原表表头与数据列整体错开一列：序号值在第 1 列(A)，表头却标在第 2 列(B)。 */
 if(H[0]==='' && H[1]==='序号') I['序号']=0;
-const VER='v2.2 · 2026-11-19';
+const VER='v2.4 · 2026-11-19';
 const DATA_DATE='2026-11-19';
 document.querySelectorAll('.ver').forEach(el=>{el.textContent=el.classList.contains('count')?VER+' · 共 '+ROWS.length+' 台 · 数据 '+DATA_DATE:VER});
 const Q=H.indexOf('后备注');
@@ -486,20 +494,64 @@ function openLoc(l){
       +'<div class="devtop"><span class="devno">'+esc(get(r,'序号'))+'</span>'
       +'<span class="devname">'+esc(get(r,'资产名称'))+'</span>'
       +'<span class="devspec">'+esc(get(r,'规格型号'))+'</span></div>'
-      +'<textarea class="devnote" data-i="'+i+'" rows="2" readonly placeholder="后备注"></textarea>'
+      +'<textarea class="devnote" data-i="'+i+'" rows="2" placeholder="后备注" enterkeyhint="done"></textarea>'
       +'</div>';
   }).join('');
   $('#devList').querySelectorAll('.devnote').forEach(t=>{t.value=noteOf(ROWS[+t.dataset.i],+t.dataset.i)});
-  $('#editAll').textContent='修改';$('#saveAll').disabled=true;
+  $('#editAll').textContent='改备注';$('#saveAll').disabled=true;$('#devHint').hidden=true;
   show('#sdev');
 }
+let lastNote=null;
+/* iOS 的 WebView 会忽略按钮里的程序化 focus()，不一定弹键盘。
+   所以：备注框本来就是可点可输入的；「改备注」只负责把框滚到眼前、高亮并给一句提示，
+   点不到键盘时用户也一眼知道该点哪里。 */
+function pulseNote(t){
+  if(!t)return;
+  t.classList.remove('pulse');
+  void t.offsetWidth;
+  t.classList.add('pulse');
+  setTimeout(()=>t.classList.remove('pulse'),2600);
+}
+function showHint(el,ms){
+  if(!el)return;
+  el.hidden=false;
+  clearTimeout(el._t);
+  el._t=setTimeout(()=>{el.hidden=true},ms||3000);
+}
+function revealInBox(t,hintEl){
+  const sc=t.closest('.ckscroll,.devlist');
+  if(!sc)return;
+  const anchor=(hintEl&&!hintEl.hidden)?hintEl:t;
+  const r=anchor.getBoundingClientRect(),sr=sc.getBoundingClientRect();
+  const want=sc.scrollTop+(r.top-sr.top)-6;
+  const maxTop=Math.max(0,sc.scrollHeight-sc.clientHeight);
+  sc.scrollTop=Math.max(0,Math.min(want,maxTop));
+}
+function focusNote(t,hintEl){
+  if(!t)return;
+  showHint(hintEl,3000);
+  t.focus();
+  try{t.setSelectionRange(t.value.length,t.value.length)}catch(e){}
+  pulseNote(t);
+  revealInBox(t,hintEl);
+  setTimeout(()=>{
+    if(document.activeElement!==t){t.focus();pulseNote(t)}
+    showHint(hintEl,3000);
+    revealInBox(t,hintEl);
+  },200);
+}
 function toggleDevEdit(){
-  editing=!editing;
   const txs=$('#devList').querySelectorAll('.devnote');
-  txs.forEach(t=>{t.readOnly=!editing;t.classList.toggle('editing',editing)});
-  $('#editAll').textContent=editing?'取消修改':'修改';
-  if(editing){$('#saveAll').disabled=!dirty;const f=txs[0];if(f)f.focus();}
-  else{txs.forEach(t=>{t.value=noteOf(ROWS[+t.dataset.i],+t.dataset.i)})}
+  if(!txs.length)return;
+  let t=(lastNote&&document.contains(lastNote))?lastNote:null;
+  if(!t){
+    const top=$('#devList').getBoundingClientRect().top;
+    t=txs[0];
+    for(let k=0;k<txs.length;k++){
+      if(txs[k].getBoundingClientRect().bottom>top){t=txs[k];break}
+    }
+  }
+  focusNote(t,$('#devHint'));
 }
 function saveAll(){
   if(curLoc===null)return;
@@ -507,13 +559,11 @@ function saveAll(){
     const i=+t.dataset.i;setNote(ROWS[i],i,t.value);
   });
   localStorage.setItem(KEY,JSON.stringify(notes));
-  dirty=false;$('#saveAll').disabled=true;
-  if(editing){editing=false;$('#editAll').textContent='修改';
-    $('#devList').querySelectorAll('.devnote').forEach(t=>{t.readOnly=true;t.classList.remove('editing')})}
+  dirty=false;$('#saveAll').disabled=true;editing=false;
   flash('#saveAll','已保存');
 }
 function backDev(){
-  if(editing&&dirty&&!confirm('有未保存的修改，确定返回？'))return;
+  if(dirty&&!confirm('有未保存的备注，确定返回？'))return;
   editing=false;dirty=false;curLoc=null;
   show('#sloc');
 }
@@ -598,11 +648,11 @@ function renderCk(){
     +'<span class="ckname">'+esc(get(r,'资产名称'))+'</span></div>'
     +'<div class="ckmeta">'+meta.map(esc).join(' · ')+'</div>'
     +'<div class="ckflag" id="ckFlag">'+flagHtml(i,st)+'</div>'
-    +'<textarea id="ckNote" class="devnote'+(ckEditing?' editing':'')+'" rows="2"'
-    +(ckEditing?'':' readonly')+' placeholder="后备注">'+esc(noteOf(r,i))+'</textarea>'
+    +'<div class="hintbar" id="ckHint" hidden>点下面的框输入</div>'
+    +'<textarea id="ckNote" class="devnote" rows="3" placeholder="后备注" enterkeyhint="done">'+esc(noteOf(r,i))+'</textarea>'
     +'</div>';
   paintActs(st);
-  $('#editCk').textContent=ckEditing?'取消修改':'修改';
+  $('#editCk').textContent='改备注';
   $('#saveCk').disabled=!ckDirty;
 }
 function markStatus(st){
@@ -640,10 +690,7 @@ function ckAct(a){
   }
 }
 function toggleCkEdit(){
-  ckEditing=!ckEditing;
-  const ta=$('#ckNote');
-  if(ta){ta.readOnly=!ckEditing;ta.classList.toggle('editing',ckEditing);if(ckEditing)ta.focus()}
-  $('#editCk').textContent=ckEditing?'取消修改':'修改';
+  focusNote($('#ckNote'),$('#ckHint'));
 }
 function backLab(){
   if(ckDirty&&!confirm('有未保存的备注，确定返回？'))return;
@@ -673,6 +720,7 @@ $('#editAll').onclick=toggleDevEdit;
 $('#saveAll').onclick=saveAll;
 $('#dlAll').onclick=()=>{if(editing&&dirty)saveAll();download(buildXlsx(),'设备26-带后备注-'+stamp()+'.xlsx');flash('#dlAll','已下载')};
 $('#devList').addEventListener('input',e=>{if(e.target.classList.contains('devnote')){dirty=true;$('#saveAll').disabled=false}});
+$('#devList').addEventListener('focusin',e=>{if(e.target.classList.contains('devnote'))lastNote=e.target});
 $('#labBtn').onclick=openLab;
 $('#backLab').onclick=()=>{show('#s1');setTimeout(()=>$('#code').focus(),80)};
 $('#labq').addEventListener('input',e=>renderLabs(e.target.value));
