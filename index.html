@@ -259,7 +259,7 @@ const H=DATA.headers;
 const I={};H.forEach((h,i)=>I[h]=i);
 /* 原表表头与数据列整体错开一列：序号值在第 1 列(A)，表头却标在第 2 列(B)。 */
 if(H[0]==='' && H[1]==='序号') I['序号']=0;
-const VER='v2.4 · 2026-11-19';
+const VER='v2.5 · 2026-11-19';
 const DATA_DATE='2026-11-19';
 document.querySelectorAll('.ver').forEach(el=>{el.textContent=el.classList.contains('count')?VER+' · 共 '+ROWS.length+' 台 · 数据 '+DATA_DATE:VER});
 const Q=H.indexOf('后备注');
@@ -493,7 +493,7 @@ function openLoc(l){
     return '<div class="devrow">'
       +'<div class="devtop"><span class="devno">'+esc(get(r,'序号'))+'</span>'
       +'<span class="devname">'+esc(get(r,'资产名称'))+'</span>'
-      +'<span class="devspec">'+esc(get(r,'规格型号'))+'</span></div>'
+      +'<span class="devspec">'+esc(get(r,'初始编号')||'—')+'</span></div>'
       +'<textarea class="devnote" data-i="'+i+'" rows="2" placeholder="后备注" enterkeyhint="done"></textarea>'
       +'</div>';
   }).join('');
@@ -640,7 +640,7 @@ function renderCk(){
   $('#ckTitle').innerHTML=esc(gLoc)+(LABRE.test(gLoc)?' <span class="tag">实验室</span>':'');
   setBar();
   const loc=get(r,'现存放位置20260123').trim(),orig=get(r,'原存放地点').trim();
-  const meta=[get(r,'规格型号')?'型号 '+get(r,'规格型号'):'','现存放 '+loc,
+  const meta=['初始编号 '+(get(r,'初始编号')||'—'),'现存放 '+loc,
     (orig&&orig!==loc)?'原存放 '+orig:''].filter(Boolean);
   $('#ckScroll').innerHTML=
      '<div class="ckcard">'
