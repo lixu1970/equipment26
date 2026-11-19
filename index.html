@@ -86,6 +86,12 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(11,9
 .hintbar{margin:6px 0 0;padding:8px 12px;border-radius:10px;background:#fff6e5;border:1px solid #f0d3ae;
   color:#8a5008;font-size:16px;font-weight:700;line-height:1.35}
 .hintbar[hidden]{display:none}
+[hidden]{display:none!important}
+.detailpane{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;padding:2px 0}
+.detailpane>.grid{overflow:visible;flex:0 0 auto;grid-template-columns:1fr}
+.detailpane .devnote{margin-top:6px;background:#fff}
+.dtnhint{margin:6px 0 0;font-size:14px;font-weight:600;color:var(--ink2)}
+@media (orientation:landscape){.detailpane>.grid{grid-template-columns:1fr 1fr}}
 
 .devnote.editing{border-color:var(--accent);box-shadow:0 0 0 3px rgba(11,98,214,.12)}
 #devTitle{white-space:normal;line-height:1.25;font-size:20px}
@@ -206,8 +212,9 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(11,9
   </div>
   <div class="hintbar" id="devHint" hidden>点下面的备注框输入</div>
   <div class="devlist" id="devList"></div>
+  <div class="detailpane" id="devDetail" hidden></div>
   <div class="actions-row">
-    <button class="btn" id="editAll">改备注</button>
+    <button class="btn" id="editAll">查明细</button>
     <button class="btn green" id="saveAll">保存</button>
     <button class="btn" id="dlAll">更新下载</button>
     <button class="btn" id="backAll">返回</button>
@@ -234,6 +241,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(11,9
   </div>
   <div class="pg"><div class="pgbar"><i id="pgFill"></i></div><div class="pgtxt" id="pgTxt">0/0 已查</div></div>
   <div class="ckscroll" id="ckScroll"></div>
+  <div class="detailpane" id="ckDetail" hidden></div>
   <div class="inbox">
     <button class="btn" data-act="in">在位</button>
     <button class="btn" data-act="out">不在位</button>
@@ -244,7 +252,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(11,9
     <button class="btn" data-act="skip">跳过</button>
   </div>
   <div class="actions-row">
-    <button class="btn" id="editCk">改备注</button>
+    <button class="btn" id="editCk">查明细</button>
     <button class="btn green" id="saveCk">保存</button>
     <button class="btn" id="dlCk">更新下载</button>
     <button class="btn" id="backCk2">返回</button>
@@ -259,7 +267,7 @@ const H=DATA.headers;
 const I={};H.forEach((h,i)=>I[h]=i);
 /* 原表表头与数据列整体错开一列：序号值在第 1 列(A)，表头却标在第 2 列(B)。 */
 if(H[0]==='' && H[1]==='序号') I['序号']=0;
-const VER='v2.6 · 2026-11-19';
+const VER='v2.7 · 2026-11-19';
 const DATA_DATE='2026-11-19';
 document.querySelectorAll('.ver').forEach(el=>{el.textContent=el.classList.contains('count')?VER+' · 共 '+ROWS.length+' 台 · 数据 '+DATA_DATE:VER});
 const Q=H.indexOf('后备注');
@@ -543,20 +551,40 @@ function openLocs(){
 }
 function openLoc(l){
   curLoc=l;editing=false;dirty=false;
+  devMode='list';devIdx=-1;$('#devDetail').hidden=true;$('#devDetail').innerHTML='';
+  $('#devList').hidden=false;
   const idxs=locMap[l]||[];
   $('#devTitle').textContent=l+' · '+idxs.length+' 台';
   $('#devList').innerHTML=idxs.map(i=>{
     const r=ROWS[i];
     return '<div class="devrow">'
-      +'<div class="devtop"><span class="devno">'+esc(get(r,'序号'))+'</span>'
+      +'<div class="devtop" data-i="'+i+'"><span class="devno">'+esc(get(r,'序号'))+'</span>'
       +'<span class="devname">'+esc(get(r,'资产名称'))+'</span>'
       +'<span class="devspec">'+esc(get(r,'初始编号')||'—')+'</span></div>'
       +'<textarea class="devnote" data-i="'+i+'" rows="2" placeholder="后备注" enterkeyhint="done"></textarea>'
       +'</div>';
   }).join('');
   $('#devList').querySelectorAll('.devnote').forEach(t=>{t.value=noteOf(ROWS[+t.dataset.i],+t.dataset.i)});
-  $('#editAll').textContent='改备注';$('#saveAll').disabled=true;$('#devHint').hidden=true;
+  $('#editAll').textContent='查明细';$('#saveAll').disabled=true;$('#devHint').hidden=true;
   show('#sdev');
+}
+
+/* ---------- 明细：场地页 / 核查页共用同一套字段（与初始编号详情页一致） ---------- */
+function detailFields(i){
+  const r=ROWS[i];
+  return field('序号',esc(get(r,'序号')))
+   +field('资产名称',esc(get(r,'资产名称')),true)
+   +field('现存放位置',esc(get(r,'现存放位置20260123')))
+   +field('规格型号',esc(get(r,'规格型号')))
+   +field('取得日期',esc(get(r,'取得日期')))
+   +field('账面价值',esc(get(r,'账面价值')))
+   +field('所属专业',esc(get(r,'所属专业')),true)
+   +field('原存放地点',esc(get(r,'原存放地点')));
+}
+function detailNoteHTML(id,val){
+  return '<div class="f note wide"><dt>后备注</dt><dd>'
+   +'<textarea id="'+id+'" class="devnote" rows="3" placeholder="点这里写后备注" enterkeyhint="done">'+esc(val)+'</textarea>'
+   +'</dd><p class="dtnhint">点框即可输入，写完点「保存」</p></div>';
 }
 let lastNote=null;
 /* iOS 的 WebView 会忽略按钮里的程序化 focus()，不一定弹键盘。
@@ -597,29 +625,75 @@ function focusNote(t,hintEl){
     revealInBox(t,hintEl);
   },200);
 }
-function toggleDevEdit(){
-  const txs=$('#devList').querySelectorAll('.devnote');
-  if(!txs.length)return;
-  let t=(lastNote&&document.contains(lastNote))?lastNote:null;
-  if(!t){
-    const top=$('#devList').getBoundingClientRect().top;
-    t=txs[0];
-    for(let k=0;k<txs.length;k++){
-      if(txs[k].getBoundingClientRect().bottom>top){t=txs[k];break}
+let devMode='list',devIdx=-1,devScroll=0;
+/* 选卡：优先最近点过的备注框，否则取列表里第一张完整可见的卡 */
+function pickCardIdx(){
+  const txs=[...$('#devList').querySelectorAll('.devnote')];
+  if(!txs.length)return -1;
+  if(lastNote&&document.contains(lastNote)&&lastNote.dataset.i!=null)return +lastNote.dataset.i;
+  const top=$('#devList').getBoundingClientRect().top;
+  for(const x of txs){
+    const b=x.closest('.devrow').getBoundingClientRect();
+    if(b.top>=top-2&&b.bottom<=$('#devList').getBoundingClientRect().bottom+2)return +x.dataset.i;
+    if(b.bottom>top+2&&b.top<top+2)return +x.dataset.i;
+  }
+  return +txs[0].dataset.i;
+}
+function openDevDetail(i){
+  if(i==null||i<0)return;
+  devIdx=i;devMode='detail';
+  devScroll=$('#devList').scrollTop;
+  $('#devList').hidden=true;$('#devHint').hidden=true;
+  const pane=$('#devDetail');
+  pane.innerHTML='<div class="grid">'+detailFields(i)+detailNoteHTML('devDNote',noteOf(ROWS[i],i))+'</div>';
+  pane.hidden=false;pane.scrollTop=0;
+  $('#editAll').textContent='收起明细';
+  $('#devTitle').textContent=get(ROWS[i],'资产名称')||('序号 '+get(ROWS[i],'序号'));
+  dirty=false;$('#saveAll').disabled=true;
+}
+function collapseDev(){
+  if(devIdx>=0){
+    const ta=$('#devDNote');
+    if(ta){
+      setNote(ROWS[devIdx],devIdx,ta.value);
+      localStorage.setItem(KEY,JSON.stringify(notes));
+      const box=$('#devList').querySelector('.devnote[data-i="'+devIdx+'"]');
+      if(box)box.value=noteOf(ROWS[devIdx],devIdx);
     }
   }
-  focusNote(t,$('#devHint'));
+  devIdx=-1;devMode='list';
+  const pane=$('#devDetail');pane.hidden=true;pane.innerHTML='';
+  $('#devList').hidden=false;
+  $('#editAll').textContent='查明细';
+  $('#devTitle').textContent=(curLoc||'')+' · '+((locMap[curLoc]||[]).length)+' 台';
+  $('#devList').scrollTop=devScroll;
+  dirty=false;$('#saveAll').disabled=true;
+}
+function toggleDevDetail(){
+  if(devMode==='detail'){collapseDev();return}
+  const i=pickCardIdx();
+  if(i>=0)openDevDetail(i);
 }
 function saveAll(){
   if(curLoc===null)return;
-  $('#devList').querySelectorAll('.devnote').forEach(t=>{
-    const i=+t.dataset.i;setNote(ROWS[i],i,t.value);
-  });
+  if(devMode==='detail'){
+    const ta=$('#devDNote');
+    if(ta)setNote(ROWS[devIdx],devIdx,ta.value);
+  }else{
+    $('#devList').querySelectorAll('.devnote').forEach(t=>{
+      const i=+t.dataset.i;setNote(ROWS[i],i,t.value);
+    });
+  }
   localStorage.setItem(KEY,JSON.stringify(notes));
   dirty=false;$('#saveAll').disabled=true;editing=false;
+  if(devMode==='detail'){
+    const box=$('#devList').querySelector('.devnote[data-i="'+devIdx+'"]');
+    if(box)box.value=noteOf(ROWS[devIdx],devIdx);
+  }
   flash('#saveAll','已保存');
 }
 function backDev(){
+  if(devMode==='detail'){collapseDev();return}
   if(dirty&&!confirm('有未保存的备注，确定返回？'))return;
   editing=false;dirty=false;curLoc=null;
   show('#sloc');
@@ -677,6 +751,9 @@ function renderLabs(q){
 function openLab(){$('#labq').value='';renderLabs('');show('#slab')}
 function openCk(l){
   gLoc=l;gIdx=(GRP[l]||[]).slice();gPos=0;ckDirty=false;ckEditing=false;
+  ckMode='list';ckDidx=-1;
+  {const pn=$('#ckDetail');if(pn){pn.hidden=true;pn.innerHTML=''}}
+  {const ib=$('#sck .inbox'),nv=$('#sck .cknav3');if(ib)ib.hidden=false;if(nv)nv.hidden=false}
   for(let k=0;k<gIdx.length;k++){if(!isChk(ROWS[gIdx[k]],gIdx[k])){gPos=k;break}}
   renderCk();show('#sck');
 }
@@ -709,7 +786,7 @@ function renderCk(){
     +'<textarea id="ckNote" class="devnote" rows="3" placeholder="后备注" enterkeyhint="done">'+esc(noteOf(r,i))+'</textarea>'
     +'</div>';
   paintActs(st);
-  $('#editCk').textContent='改备注';
+  $('#editCk').textContent=(ckMode==='detail')?'收起明细':'查明细';
   $('#saveCk').disabled=!ckDirty;
 }
 function markStatus(st){
@@ -746,10 +823,43 @@ function ckAct(a){
     gPos=j;renderCk();
   }
 }
+let ckMode='list',ckDidx=-1;
+function openCkDetail(){
+  const i=gIdx[gPos];if(i==null)return;
+  commitNote();
+  ckDidx=i;ckMode='detail';
+  const pane=$('#ckDetail');
+  pane.innerHTML='<div class="grid">'+detailFields(i)+detailNoteHTML('ckDNote',noteOf(ROWS[i],i))+'</div>';
+  pane.hidden=false;pane.scrollTop=0;
+  $('#ckScroll').hidden=true;
+  const ib=$('#sck .inbox'),nv=$('#sck .cknav3');
+  if(ib)ib.hidden=true;if(nv)nv.hidden=true;
+  $('#editCk').textContent='收起明细';
+  ckDirty=false;$('#saveCk').disabled=true;
+}
+function collapseCk(){
+  if(ckDidx>=0){
+    const ta=$('#ckDNote');
+    if(ta){
+      setNote(ROWS[ckDidx],ckDidx,ta.value);
+      localStorage.setItem(KEY,JSON.stringify(notes));
+      const ck=$('#ckNote');
+      if(ck&&ckDidx===gIdx[gPos])ck.value=noteOf(ROWS[ckDidx],ckDidx);
+    }
+  }
+  ckDidx=-1;ckMode='list';
+  const pane=$('#ckDetail');pane.hidden=true;pane.innerHTML='';
+  $('#ckScroll').hidden=false;
+  const ib=$('#sck .inbox'),nv=$('#sck .cknav3');
+  if(ib)ib.hidden=false;if(nv)nv.hidden=false;
+  $('#editCk').textContent='查明细';
+}
 function toggleCkEdit(){
-  focusNote($('#ckNote'),$('#ckHint'));
+  if(ckMode==='detail'){collapseCk();return}
+  openCkDetail();
 }
 function backLab(){
+  if(ckMode==='detail'){collapseCk();return}
   if(ckDirty&&!confirm('有未保存的备注，确定返回？'))return;
   ckDirty=false;ckEditing=false;
   renderLabs($('#labq').value);show('#slab');
@@ -772,18 +882,32 @@ $('#backLoc').onclick=()=>{show('#s1');setTimeout(()=>$('#code').focus(),80)};
 $('#locq').addEventListener('input',e=>renderLocs(e.target.value));
 $('#backDev').onclick=backDev;
 $('#backAll').onclick=backDev;
-$('#editAll').onclick=toggleDevEdit;
+$('#editAll').onclick=toggleDevDetail;
+$('#devList').addEventListener('click',e=>{
+  const t=e.target.closest('.devtop');
+  if(t&&t.dataset.i!=null)openDevDetail(+t.dataset.i);
+});
 $('#saveAll').onclick=saveAll;
 $('#dlAll').onclick=async()=>{if(dirty)saveAll();if(await exportNow())flash('#dlAll','已下载')};
 $('#devList').addEventListener('input',e=>{if(e.target.classList.contains('devnote')){dirty=true;$('#saveAll').disabled=false}});
 $('#devList').addEventListener('focusin',e=>{if(e.target.classList.contains('devnote'))lastNote=e.target});
+$('#devDetail').addEventListener('input',e=>{if(e.target.id==='devDNote'){dirty=true;$('#saveAll').disabled=false}});
+$('#ckDetail').addEventListener('input',e=>{if(e.target.id==='ckDNote'){ckDirty=true;$('#saveCk').disabled=false}});
 $('#labBtn').onclick=openLab;
 $('#backLab').onclick=()=>{show('#s1');setTimeout(()=>$('#code').focus(),80)};
 $('#labq').addEventListener('input',e=>renderLabs(e.target.value));
 $('#backCk').onclick=backLab;
 $('#backCk2').onclick=backLab;
 $('#editCk').onclick=toggleCkEdit;
-$('#saveCk').onclick=()=>{commitNote();flash('#saveCk','已保存')};
+$('#saveCk').onclick=()=>{
+  if(ckMode==='detail'){
+    const ta=$('#ckDNote');
+    if(ta){setNote(ROWS[ckDidx],ckDidx,ta.value);localStorage.setItem(KEY,JSON.stringify(notes));
+      const ck=$('#ckNote');if(ck&&ckDidx===gIdx[gPos])ck.value=noteOf(ROWS[ckDidx],ckDidx);}
+    ckDirty=false;dirty=false;
+  }else commitNote();
+  flash('#saveCk','已保存');
+};
 $('#dlCk').onclick=async()=>{commitNote();if(await exportNow())flash('#dlCk','已下载')};
 $('#sck').addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');if(b)ckAct(b.dataset.act);
