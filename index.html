@@ -281,6 +281,17 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
   <div class="ver"></div>
 </section>
 
+<!-- 某专业下的场地 -->
+<section class="screen" id="sploc">
+  <div class="top">
+    <button class="back" id="backPloc">‹</button>
+    <div class="code" id="plocTitle">—</div>
+  </div>
+  <div class="locsearch"><input type="text" id="plocq" placeholder="搜场地" autocomplete="off"></div>
+  <div class="locpick" id="plocList"></div>
+  <div class="ver"></div>
+</section>
+
 <!-- 盘点录入：按铭牌编号标「无盘亏」 -->
 <section class="screen" id="sstock">
   <div class="top">
@@ -307,6 +318,17 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
   </div>
   <div class="locsearch"><input type="text" id="labq" placeholder="搜实训室或场地" autocomplete="off"></div>
   <div class="locpick" id="labList"></div>
+  <div class="ver"></div>
+</section>
+
+<!-- 某实训室下的专业 -->
+<section class="screen" id="slprof">
+  <div class="top">
+    <button class="back" id="backLprof">‹</button>
+    <div class="code" id="lprofTitle">—</div>
+  </div>
+  <div class="locsearch"><input type="text" id="lprofq" placeholder="搜专业" autocomplete="off"></div>
+  <div class="locpick" id="lprofList"></div>
   <div class="ver"></div>
 </section>
 
@@ -344,7 +366,7 @@ const H=DATA.headers;
 const I={};H.forEach((h,i)=>I[h]=i);
 /* 原表表头与数据列整体错开一列：序号值在第 1 列(A)，表头却标在第 2 列(B)。 */
 if(H[0]==='' && H[1]==='序号') I['序号']=0;
-const VER='v2.26 · 2026-11-20';
+const VER='v2.27 · 2026-11-20';
 const DATA_DATE='2026-11-19';
 const FOOT=document.getElementById('foot');if(FOOT)FOOT.textContent='沙河教务 · '+VER;
 document.querySelectorAll('.ver').forEach(el=>{el.textContent=el.classList.contains('count')?VER+' · 共 '+ROWS.length+' 台':VER});
@@ -364,7 +386,7 @@ const noteOf=(r,i)=>{const k=rkey(r,i);if(k in notes)return notes[k];const v=(r[
 /* 空串 = 显式清空：键存在就用它（哪怕是空），不再回落到表里原来的备注 */
 const setNote=(r,i,v)=>{notes[rkey(r,i)]=String(v==null?'':v).trim()};
 let cur=-1, dirty=false, editing=false;
-let curProf=null;
+let curProf=null,curProfLoc=null;
 
 /* 初始编号索引（不区分大小写、去空格） */
 const idxMap={};
@@ -640,18 +662,46 @@ function renderProfs(q){
   $('#locList').innerHTML=list.length?list.map(v=>
     '<button data-l="'+esc(v)+'"><b>'+esc(v)+'</b><span>'+profMap[v].length+' 台</span></button>').join('')
     :'<div class="empty">没找到这个专业</div>';
-  $('#locList').querySelectorAll('button').forEach(b=>b.onclick=()=>openProf(b.dataset.l));
+  $('#locList').querySelectorAll('button').forEach(b=>b.onclick=()=>openProfLoc(b.dataset.l));
 }
 function openProfs(){
   $('#locq').value='';renderProfs('');
   show('#sloc');
 }
-function openProf(l){
-  curProf=l;editing=false;dirty=false;
+/* 某个专业下面的场地：台数降序，未填的场地垫底 */
+const NO_LOC='（未填存放位置）';
+const locOf=i=>get(ROWS[i],'现存放位置20260123').trim()||NO_LOC;
+function profLocs(prof){
+  const m={};
+  (profMap[prof]||[]).forEach(i=>{const v=locOf(i);(m[v]=m[v]||[]).push(i)});
+  return Object.keys(m).sort((a,b)=>{
+    if(a===NO_LOC)return 1;if(b===NO_LOC)return -1;
+    return m[b].length-m[a].length||a.localeCompare(b,'zh-Hans-CN');
+  }).map(k=>[k,m[k]]);
+}
+function renderProfLocs(){
+  const kw=($('#plocq').value||'').trim();
+  const list=profLocs(curProf).filter(x=>!kw||x[0].includes(kw));
+  $('#plocList').innerHTML=list.length?list.map(x=>{
+    const k=x[0],n=x[1].length;
+    const tag=LABRE.test(k)?'<span class="tag">实训室</span>'
+      :'<span class="tag" style="background:#eef1f6;color:#4a5460;border-color:#d8dee6">场地</span>';
+    return '<button data-l="'+esc(k)+'"><b>'+esc(k)+' '+tag+'</b><span>'+n+' 台</span></button>';
+  }).join(''):'<div class="empty">没找到这个场地</div>';
+  $('#plocList').querySelectorAll('button').forEach(b=>b.onclick=()=>openProfDev(curProf,b.dataset.l));
+}
+function openProfLoc(prof){
+  curProf=prof;curProfLoc=null;
+  $('#plocTitle').textContent=prof+' · 按场地';
+  $('#plocq').value='';renderProfLocs();
+  show('#sploc');
+}
+function openProfDev(prof,loc){
+  curProf=prof;curProfLoc=loc;editing=false;dirty=false;
   devMode='list';devIdx=-1;$('#devDetail').hidden=true;$('#devDetail').innerHTML='';
   $('#devList').hidden=false;
-  const idxs=profMap[l]||[];
-  $('#devTitle').textContent=l+' · '+idxs.length+' 台';
+  const idxs=(profMap[prof]||[]).filter(i=>locOf(i)===loc);
+  $('#devTitle').textContent=prof+' · '+loc+' · '+idxs.length+' 台';
   $('#devList').innerHTML=idxs.map(i=>{
     const r=ROWS[i];
     return '<div class="devrow">'
@@ -791,7 +841,8 @@ function saveAll(){
 function backDev(){
   if(devMode==='detail'){collapseDev();return}
   if(dirty&&!confirm('有未保存的备注，确定返回？'))return;
-  editing=false;dirty=false;curProf=null;
+  editing=false;dirty=false;
+  if(curProf){openProfLoc(curProf);return}   /* 设备 → 场地 */
   show('#sloc');
 }
 
@@ -882,7 +933,7 @@ const GNAMES=Object.keys(GRP).sort((a,b)=>{
   if(la)return GRP[b].length-GRP[a].length||a.localeCompare(b,'zh-Hans-CN');
   return a.localeCompare(b,'zh-Hans-CN');
 });
-let gLoc=null,gIdx=[],gPos=0,ckDirty=false,ckEditing=false;
+let gLoc=null,gProf=null,gIdx=[],gPos=0,ckDirty=false,ckEditing=false;
 function gDone(idxs){let n=0;idxs.forEach(i=>{if(isChk(ROWS[i],i))n++});return n}
 
 function renderLabs(q){
@@ -896,11 +947,44 @@ function renderLabs(q){
       +(pend?' <span class="tag warn">待核 '+pend+'</span>':'')
       +'</b><span>'+idxs.length+' 台'+(done?' · 已查 '+done:'')+'</span></button>';
   }).join(''):'<div class="empty">没找到这个场地</div>';
-  $('#labList').querySelectorAll('button').forEach(b=>b.onclick=()=>openCk(b.dataset.l));
+  $('#labList').querySelectorAll('button').forEach(b=>b.onclick=()=>openLabProfs(b.dataset.l));
 }
 function openLab(){$('#labq').value='';renderLabs('');show('#slab')}
+/* 某实训室下面的专业：台数降序，「（未填专业）」垫底 */
+function labProfs(lab){
+  const m={};
+  (GRP[lab]||[]).forEach(i=>{const v=get(ROWS[i],'所属专业').trim()||NO_PROF;(m[v]=m[v]||[]).push(i)});
+  return Object.keys(m).sort((a,b)=>{
+    if(a===NO_PROF)return 1;if(b===NO_PROF)return -1;
+    return m[b].length-m[a].length||a.localeCompare(b,'zh-Hans-CN');
+  }).map(k=>[k,m[k]]);
+}
+function renderLabProfs(){
+  const kw=($('#lprofq').value||'').trim();
+  const list=labProfs(gLoc).filter(x=>!kw||x[0].includes(kw));
+  $('#lprofList').innerHTML=list.length?list.map(x=>
+    '<button data-p="'+esc(x[0])+'"><b>'+esc(x[0])+'</b><span>'+x[1].length+' 台</span></button>').join('')
+    :'<div class="empty">没找到这个专业</div>';
+  $('#lprofList').querySelectorAll('button').forEach(b=>b.onclick=()=>openCkSub(gLoc,b.dataset.p));
+}
+function openLabProfs(lab){
+  gLoc=lab;gProf=null;ckDirty=false;ckEditing=false;
+  $('#lprofTitle').textContent=lab+' · 按专业';
+  $('#lprofq').value='';renderLabProfs();
+  show('#slprof');
+}
+/* 只核查「这间实训室 + 这个专业」的子集 */
+function openCkSub(lab,prof){
+  gLoc=lab;gProf=prof;
+  gIdx=(GRP[lab]||[]).filter(i=>(get(ROWS[i],'所属专业').trim()||NO_PROF)===prof);
+  gPos=0;ckDirty=false;ckEditing=false;ckMode='list';ckDidx=-1;
+  {const pn=$('#ckDetail');if(pn){pn.hidden=true;pn.innerHTML=''}}
+  {const ib=$('#sck .inbox'),nv=$('#sck .cknav3');if(ib)ib.hidden=false;if(nv)nv.hidden=false}
+  for(let k=0;k<gIdx.length;k++){if(!isChk(ROWS[gIdx[k]],gIdx[k])){gPos=k;break}}
+  renderCk();show('#sck');
+}
 function openCk(l){
-  gLoc=l;gIdx=(GRP[l]||[]).slice();gPos=0;ckDirty=false;ckEditing=false;
+  gLoc=l;gProf=null;gIdx=(GRP[l]||[]).slice();gPos=0;ckDirty=false;ckEditing=false;
   ckMode='list';ckDidx=-1;
   {const pn=$('#ckDetail');if(pn){pn.hidden=true;pn.innerHTML=''}}
   {const ib=$('#sck .inbox'),nv=$('#sck .cknav3');if(ib)ib.hidden=false;if(nv)nv.hidden=false}
@@ -925,7 +1009,7 @@ function renderCk(){
   if(!gIdx.length)return;
   gPos=Math.max(0,Math.min(gPos,gIdx.length-1));
   const i=gIdx[gPos],r=ROWS[i],st=stChk(r,i);
-  $('#ckTitle').innerHTML=esc(gLoc)+(LABRE.test(gLoc)?' <span class="tag">实训室</span>':'');
+  $('#ckTitle').innerHTML=esc(gLoc)+(LABRE.test(gLoc)?' <span class="tag">实训室</span>':'')+(gProf?' · '+esc(gProf):'');
   setBar();
   const loc=get(r,'现存放位置20260123').trim();
   const meta=['初始编号 '+(get(r,'初始编号')||'—'),'现存放 '+loc].filter(Boolean);
@@ -1043,6 +1127,7 @@ function backLab(){
   if(ckMode==='detail'){collapseCk();return}
   if(ckDirty&&!confirm('有未保存的备注，确定返回？'))return;
   ckDirty=false;ckEditing=false;
+  if(gProf){renderLabProfs();show('#slprof');return}   /* 核查 → 本室专业列表 */
   renderLabs($('#labq').value);show('#slab');
 }
 
@@ -1232,6 +1317,10 @@ $('#back').onclick=goBack;
 $('#back2').onclick=goBack;
 $('#backPick').onclick=()=>{show('#s1');setTimeout(()=>$('#code').focus(),80)};
 $('#locBtn').onclick=openProfs;
+$('#backPloc').onclick=()=>{renderProfs($('#locq').value);show('#sloc')};
+$('#plocq').addEventListener('input',()=>renderProfLocs());
+$('#backLprof').onclick=()=>{renderLabs($('#labq').value);show('#slab')};
+$('#lprofq').addEventListener('input',()=>renderLabProfs());
 $('#backLoc').onclick=()=>{show('#s1');setTimeout(()=>$('#code').focus(),80)};
 $('#locq').addEventListener('input',e=>renderProfs(e.target.value));
 $('#backDev').onclick=backDev;
