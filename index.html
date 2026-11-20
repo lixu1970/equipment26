@@ -41,7 +41,7 @@ body{display:flex;flex-direction:column;min-height:100%;
 .h1{font-size:clamp(23px,7vw,30px);font-weight:800;letter-spacing:3px;margin:0;
   text-align:center;color:#0b2545;white-space:nowrap}
 .hint{font-size:clamp(15px,4.4vw,18px);color:var(--ink2);margin:0;text-align:center}
-input[type=text]{display:block;width:min(84%,300px);margin:0 auto;height:clamp(50px,8.2vh,60px);
+input[type=text]{display:block;width:calc(100% - 22px);margin:0 auto;height:clamp(50px,8.2vh,60px);
   border:2px solid var(--line);border-radius:12px;padding:0 12px;
   font-size:clamp(20px,6.2vw,26px);font-weight:700;letter-spacing:1px;color:var(--ink);
   background:#fff;outline:none;-webkit-appearance:none;text-align:center}
@@ -51,6 +51,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
   display:flex;flex-direction:column;gap:8px}
 .ghd{font-size:14px;font-weight:800;color:#3f5a7d;letter-spacing:.5px}
 .gacts{display:grid;grid-template-columns:1fr;gap:8px}
+.sacts{display:grid;grid-template-columns:1.35fr 1fr;gap:8px;flex:0 0 auto}
 .ghd::before{content:'';display:inline-block;width:4px;height:14px;border-radius:2px;
   background:var(--accent);margin-right:6px;vertical-align:-2px}
 .foot{font-size:12px;color:#7b8794;text-align:center;letter-spacing:.4px;font-weight:600}
@@ -219,9 +220,9 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
   <div class="pickgroup">
     <div class="ghd">盘点录入选项</div>
     <div class="gacts">
-      <button class="btn" id="locBtn">1 按现存放位置筛选</button>
-      <button class="btn" id="labBtn">2 按实验室核查</button>
-      <button class="btn" id="stockBtn">3 盘点录入</button>
+      <button class="btn" id="locBtn">按现存放位置筛选</button>
+      <button class="btn" id="labBtn">按实训室核查</button>
+      <button class="btn" id="stockBtn">盘点录入</button>
     </div>
   </div>
   <div class="foot" id="foot"></div>
@@ -288,10 +289,11 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
   <p class="hint">对着标签拍照，认到就直接标；也可以把「设备编号」贴到下面框里手动标。</p>
   <input type="file" id="camIn" accept="image/*" capture="environment" hidden>
   <button class="btn primary" id="snapBtn">拍照识别编号</button>
-  <p class="small-hint">对着标签拍，让编号那行占满画面最准；认不出就把编号贴到下面框里手动标。</p>
   <textarea id="stockIn" placeholder="也可以直接把编号贴这里（一行一个）"></textarea>
-  <button class="btn" id="stockGo">标记「无盘亏」</button>
-  <button class="btn green" id="stockDl">更新下载</button>
+  <div class="sacts">
+    <button class="btn" id="stockGo">标记「无盘亏」</button>
+    <button class="btn" id="stockDl">更新下载</button>
+  </div>
   <div class="stockout" id="stockOut">还没标记。</div>
   <div class="ver"></div>
 </section>
@@ -300,9 +302,9 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
 <section class="screen" id="slab">
   <div class="top">
     <button class="back" id="backLab">‹</button>
-    <div class="code">按实验室核查</div>
+    <div class="code">按实训室核查</div>
   </div>
-  <div class="locsearch"><input type="text" id="labq" placeholder="搜实验室或场地" autocomplete="off"></div>
+  <div class="locsearch"><input type="text" id="labq" placeholder="搜实训室或场地" autocomplete="off"></div>
   <div class="locpick" id="labList"></div>
   <div class="ver"></div>
 </section>
@@ -341,7 +343,7 @@ const H=DATA.headers;
 const I={};H.forEach((h,i)=>I[h]=i);
 /* 原表表头与数据列整体错开一列：序号值在第 1 列(A)，表头却标在第 2 列(B)。 */
 if(H[0]==='' && H[1]==='序号') I['序号']=0;
-const VER='v2.24 · 2026-11-19';
+const VER='v2.25 · 2026-11-19';
 const DATA_DATE='2026-11-19';
 const FOOT=document.getElementById('foot');if(FOOT)FOOT.textContent='沙河教务 · '+VER;
 document.querySelectorAll('.ver').forEach(el=>{el.textContent=el.classList.contains('count')?VER+' · 共 '+ROWS.length+' 台':VER});
@@ -787,7 +789,7 @@ function backDev(){
 }
 
 
-/* ---------------- 按实验室 / 场地逐台核查 ---------------- */
+/* ---------------- 按实训室 / 场地逐台核查 ---------------- */
 const LABRE=/实训室|实验室/, CHKKEY='eq26.check.v1', MARK='无盘亏';
 const TODAY=(()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');
   return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())})();
@@ -860,7 +862,7 @@ function ckMsg(text,kind){
   clearTimeout(ckMsgT);ckMsgT=setTimeout(()=>{el.hidden=true},3600);
 }
 
-/* 分组：按「现存放位置」；现存放不是实验室、但原存放是实验室的 7 台，归到原存放实验室并标「位置待核」 */
+/* 分组：按「现存放位置」；LABRE 只做「是不是实训室」的判定，分组结果与文案无关，别动 */
 const PEND={}, GRP={};
 ROWS.forEach((r,i)=>{
   let loc=get(r,'现存放位置20260123').trim();
@@ -883,7 +885,7 @@ function renderLabs(q){
     const idxs=GRP[v],done=gDone(idxs),lab=LABRE.test(v);
     const pend=idxs.filter(i=>PEND[i]).length;
     return '<button data-l="'+esc(v)+'"><b>'+esc(v)
-      +(lab?' <span class="tag">实验室</span>':'')
+      +(lab?' <span class="tag">实训室</span>':'')
       +(pend?' <span class="tag warn">待核 '+pend+'</span>':'')
       +'</b><span>'+idxs.length+' 台'+(done?' · 已查 '+done:'')+'</span></button>';
   }).join(''):'<div class="empty">没找到这个场地</div>';
@@ -916,7 +918,7 @@ function renderCk(){
   if(!gIdx.length)return;
   gPos=Math.max(0,Math.min(gPos,gIdx.length-1));
   const i=gIdx[gPos],r=ROWS[i],st=stChk(r,i);
-  $('#ckTitle').innerHTML=esc(gLoc)+(LABRE.test(gLoc)?' <span class="tag">实验室</span>':'');
+  $('#ckTitle').innerHTML=esc(gLoc)+(LABRE.test(gLoc)?' <span class="tag">实训室</span>':'');
   setBar();
   const loc=get(r,'现存放位置20260123').trim();
   const meta=['初始编号 '+(get(r,'初始编号')||'—'),'现存放 '+loc].filter(Boolean);
@@ -1103,8 +1105,6 @@ function runStock(){
 function openStock(){
   $('#stockIn').value='';
   $('#stockOut').innerHTML='还没标记。';
-  const v=$('#sstock .ver');
-  if(v)v.textContent=VER+' · 共 '+ROWS.length+' 台 · 数据 '+DATA_DATE;
   show('#sstock');
 }
 
