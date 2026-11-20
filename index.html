@@ -172,7 +172,9 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
   -webkit-user-select:text;user-select:text}
 #phNote:focus,#phCatCustom:focus{border-color:var(--accent);outline:none;box-shadow:inset 0 0 0 1px rgba(11,98,214,.35)}
 .phadd{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-.phadd .btn{height:44px;font-size:16px;padding:0 2px}
+.phadd .btn{height:44px;font-size:16px;padding:0 2px;-webkit-tap-highlight-color:transparent;cursor:pointer}
+.phfile{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;opacity:0;
+  overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;pointer-events:none}
 .phlist{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:8px;padding:2px 0}
 .phitem{display:flex;gap:10px;align-items:center;padding:8px;border:1px solid #e6ecf4;border-left:5px solid var(--accent);
   border-radius:12px;background:#f7f9fc;cursor:pointer}
@@ -379,13 +381,15 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
       </div>
       <textarea id="phNote" rows="2" placeholder="备注：这条记录是什么情况（可留空）"></textarea>
       <div class="phadd">
-        <button class="btn" id="phCam">拍照</button>
-        <button class="btn" id="phPick">相册</button>
+        <label class="btn" for="phCamIn" id="phCam">拍照</label>
+        <label class="btn" for="phPickIn" id="phPick">相册</label>
         <button class="btn" id="phPaste">粘贴</button>
       </div>
       <div class="hintbar" id="phPasteHint" hidden>长按上面的备注框，点「粘贴」就能贴进截图</div>
-      <input type="file" id="phCamIn" accept="image/*" capture="environment" hidden>
-      <input type="file" id="phPickIn" accept="image/*" multiple hidden>
+      <div class="hintbar" id="phMemWarn" hidden>这个打开方式浏览器不让存照片，只能临时留在本页；请用线上网址打开再拍。关掉页面就没了，记得先导出。</div>
+      <div class="hintbar" id="phErr" hidden></div>
+      <input type="file" id="phCamIn" class="phfile" accept="image/*" capture="environment">
+      <input type="file" id="phPickIn" class="phfile" accept="image/*" multiple>
     </div>
     <div class="phlist" id="phList"></div>
     <div class="phfoot" id="phCount">共 0 条 · 0 张照片</div>
@@ -467,7 +471,7 @@ const H=DATA.headers;
 const I={};H.forEach((h,i)=>I[h]=i);
 /* 原表表头与数据列整体错开一列：序号值在第 1 列(A)，表头却标在第 2 列(B)。 */
 if(H[0]==='' && H[1]==='序号') I['序号']=0;
-const VER='v2.28 · 2026-11-20';
+const VER='v2.29 · 2026-11-20';
 const DATA_DATE='2026-11-19';
 const FOOT=document.getElementById('foot');if(FOOT)FOOT.textContent='沙河教务 · '+VER;
 document.querySelectorAll('.ver').forEach(el=>{el.textContent=el.classList.contains('count')?VER+' · 共 '+ROWS.length+' 台':VER});
@@ -1300,7 +1304,21 @@ function runStock(){
 const PH_DB='eq26.photos', PH_STORE='recs', PH_CATKEY='eq26.photo.cat.v1';
 const PH_CATS=['不在账设备','其他备注','待处理','报修'];
 const PH_CUSTOM='__custom';
-let phDBP=null, phURLs=[];
+let phDBP=null, phURLs=[], phMem=[], phMemMode=false;
+function phWarn(msg){
+  const el=$('#phMemWarn');if(el){el.hidden=!msg;if(msg)el.innerHTML=msg}
+}
+function phUseMem(reason){
+  if(phMemMode)return;
+  phMemMode=true;
+  console.warn('照片存储降到内存模式：',reason);
+  phWarn('这个打开方式浏览器不让存照片，只能临时留在本页；请用线上网址打开再拍。关掉页面就没了，记得先导出。');
+}
+function phShowErr(msg){
+  const el=$('#phErr');if(!el)return;
+  el.innerHTML=String(msg||'');
+  el.hidden=!msg;
+}
 function phOpenDB(){
   if(phDBP)return phDBP;
   phDBP=new Promise((res,rej)=>{
@@ -1314,18 +1332,25 @@ function phOpenDB(){
 }
 function phStore(mode){return phOpenDB().then(db=>db.transaction(PH_STORE,mode).objectStore(PH_STORE))}
 async function phAll(){
+  if(phMemMode)return phMem.slice();
   try{
     const st=await phStore('readonly');
     return await new Promise((res,rej)=>{const r=st.getAll();r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error)});
-  }catch(e){return []}
+  }catch(e){phUseMem(e);return phMem.slice()}
 }
 async function phPut(rec){
-  const st=await phStore('readwrite');
-  return new Promise((res,rej)=>{const r=st.put(rec);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)});
+  if(phMemMode){phMem=phMem.filter(r=>r.id!==rec.id).concat([rec]);return}
+  try{
+    const st=await phStore('readwrite');
+    await new Promise((res,rej)=>{const r=st.put(rec);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)});
+  }catch(e){phUseMem(e);phMem=phMem.filter(r=>r.id!==rec.id).concat([rec])}
 }
 async function phDelete(id){
-  const st=await phStore('readwrite');
-  return new Promise((res,rej)=>{const r=st.delete(id);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)});
+  if(phMemMode){phMem=phMem.filter(r=>r.id!==id);return}
+  try{
+    const st=await phStore('readwrite');
+    await new Promise((res,rej)=>{const r=st.delete(id);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)});
+  }catch(e){phUseMem(e);phMem=phMem.filter(r=>r.id!==id)}
 }
 const phId=()=>Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6);
 const phP2=n=>String(n).padStart(2,'0');
@@ -1367,21 +1392,33 @@ async function phCompress(file){
   return blob||file;
 }
 async function phAddFiles(list){
-  const arr=[...list].filter(f=>f&&f.type&&/^image\//.test(f.type));
-  if(!arr.length)return;
-  const note=($('#phNote').value||'').trim();
-  const cat=phCatNow();
-  let n=0,base=Date.now();
-  for(const f of arr){
-    let blob=f;
-    try{blob=await phCompress(f)}catch(e){}
-    await phPut({id:phId()+'-'+n,cat,note,time:base+n*1000,img:blob});
-    n++;
+  try{
+    const arr=[...list].filter(f=>f&&(f.type?/^image\//.test(f.type):true));
+    if(!arr.length){phShowErr('没拿到图片：选中的文件不是图片，或相册返回为空。');return}
+    if(!window.indexedDB&&!phMemMode)phUseMem('no indexedDB');
+    const note=($('#phNote').value||'').trim();
+    const cat=phCatNow();
+    let n=0,base=Date.now(),fail=0,lastErr='';
+    for(const f of arr){
+      let blob=f;
+      try{blob=await phCompress(f)}catch(e){lastErr=e&&e.message||String(e)}
+      try{
+        await phPut({id:phId()+'-'+n,cat,note,time:base+n*1000,img:blob});
+        n++;
+      }catch(e){fail++;lastErr=e&&e.message||String(e)}
+    }
+    $('#phNote').value='';
+    $('#phPasteHint').hidden=true;
+    await phRender();
+    if(!n){phShowErr('没能存下这张照片：'+(lastErr||'原因不明')+'。再试一次，或换用「相册」入口。');return}
+    phShowErr('');
+    const lb=$('#phCam');
+    const old=lb.textContent;
+    lb.textContent='已存 '+n+' 张';
+    setTimeout(()=>{lb.textContent=old},1200);
+  }catch(e){
+    phShowErr('加照片出错：'+(e&&e.message||e));
   }
-  $('#phNote').value='';
-  $('#phPasteHint').hidden=true;
-  await phRender();
-  flash('#phCam','已存 '+n+' 张');
 }
 async function phRender(){
   const recs=(await phAll()).sort((a,b)=>b.time-a.time);
@@ -1641,10 +1678,17 @@ $('#backPhoto').onclick=()=>{show('#s1');setTimeout(()=>$('#code').focus(),80)};
 document.querySelectorAll('#sphoto .tab').forEach(b=>b.onclick=()=>phTab(b.dataset.tab));
 $('#phCat').onchange=()=>{$('#phCatCustom').hidden=$('#phCat').value!==PH_CUSTOM;phSavePref()};
 $('#phCatCustom').oninput=phSavePref;
-$('#phCam').onclick=()=>$('#phCamIn').click();
-$('#phPick').onclick=()=>$('#phPickIn').click();
-$('#phCamIn').addEventListener('change',e=>{const f=e.target.files;e.target.value='';if(f&&f.length)phAddFiles(f)});
-$('#phPickIn').addEventListener('change',e=>{const f=e.target.files;e.target.value='';if(f&&f.length)phAddFiles(f)});
+/* 拍照 / 相册 用 <label for> 直接唤起选择器，不再用脚本 .click()——iOS 上脚本点击隐藏的文件框常常不弹 */
+/* 先把选中的文件复制成普通数组，再清空 input —— 直接读 e.target.files 再清空，Safari 里这个列表会跟着变空 */
+function phOnPick(e){
+  const box=e.target;
+  const files=box.files?[...box.files]:[];
+  box.value='';
+  if(files.length)phAddFiles(files);
+  else phShowErr('没选到照片（选择器返回空）。再点一次，或改用粘贴。');
+}
+$('#phCamIn').addEventListener('change',phOnPick);
+$('#phPickIn').addEventListener('change',phOnPick);
 $('#phPaste').onclick=()=>{
   const ta=$('#phNote');ta.focus();
   const h=$('#phPasteHint');h.hidden=false;
