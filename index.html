@@ -46,7 +46,8 @@ input[type=text]{display:block;width:calc(100% - 22px);margin:0 auto;height:clam
   font-size:clamp(20px,6.2vw,26px);font-weight:700;letter-spacing:1px;color:var(--ink);
   background:#fff;outline:none;-webkit-appearance:none;text-align:center}
 input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgba(11,98,214,.35)}
-.home-acts{display:grid;grid-template-columns:1fr;gap:var(--gap)}
+/* 查询键和下面三项同宽：分组卡片内边距 10px + 边框 1px，这里补 11px 内缩，左边界一致 */
+.home-acts{display:grid;grid-template-columns:1fr;gap:var(--gap);padding:0 11px}
 .pickgroup{background:#f5f9ff;border:1px solid #dbe7f8;border-radius:var(--rad);padding:10px;
   display:flex;flex-direction:column;gap:8px}
 .ghd{font-size:14px;font-weight:800;color:#3f5a7d;letter-spacing:.5px}
@@ -220,7 +221,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
   <div class="pickgroup">
     <div class="ghd">盘点录入选项</div>
     <div class="gacts">
-      <button class="btn" id="locBtn">按现存放位置筛选</button>
+      <button class="btn" id="locBtn">按所属专业筛选</button>
       <button class="btn" id="labBtn">按实训室核查</button>
       <button class="btn" id="stockBtn">盘点录入</button>
     </div>
@@ -255,9 +256,9 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
 <section class="screen" id="sloc">
   <div class="top">
     <button class="back" id="backLoc">‹</button>
-    <div class="code">按现存放位置</div>
+    <div class="code" id="profTitle">按所属专业</div>
   </div>
-  <div class="locsearch"><input type="text" id="locq" placeholder="搜地点名" autocomplete="off"></div>
+  <div class="locsearch"><input type="text" id="locq" placeholder="搜专业或关键字" autocomplete="off"></div>
   <div class="locpick" id="locList"></div>
   <div class="ver"></div>
 </section>
@@ -343,7 +344,7 @@ const H=DATA.headers;
 const I={};H.forEach((h,i)=>I[h]=i);
 /* 原表表头与数据列整体错开一列：序号值在第 1 列(A)，表头却标在第 2 列(B)。 */
 if(H[0]==='' && H[1]==='序号') I['序号']=0;
-const VER='v2.25 · 2026-11-19';
+const VER='v2.26 · 2026-11-20';
 const DATA_DATE='2026-11-19';
 const FOOT=document.getElementById('foot');if(FOOT)FOOT.textContent='沙河教务 · '+VER;
 document.querySelectorAll('.ver').forEach(el=>{el.textContent=el.classList.contains('count')?VER+' · 共 '+ROWS.length+' 台':VER});
@@ -363,7 +364,7 @@ const noteOf=(r,i)=>{const k=rkey(r,i);if(k in notes)return notes[k];const v=(r[
 /* 空串 = 显式清空：键存在就用它（哪怕是空），不再回落到表里原来的备注 */
 const setNote=(r,i,v)=>{notes[rkey(r,i)]=String(v==null?'':v).trim()};
 let cur=-1, dirty=false, editing=false;
-let curLoc=null;
+let curProf=null;
 
 /* 初始编号索引（不区分大小写、去空格） */
 const idxMap={};
@@ -622,28 +623,34 @@ function stamp(){const d=new Date(),p=n=>String(n).padStart(2,'0');
 
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 
-/* ---------------- 按原存放地点 ---------------- */
-const locMap={};
-ROWS.forEach((r,i)=>{const v=get(r,'现存放位置20260123').trim();if(!v)return;(locMap[v]=locMap[v]||[]).push(i)});
-const LOCS=Object.keys(locMap).sort((a,b)=>a.localeCompare(b,'zh-Hans-CN'));
+/* ---------------- 按所属专业（v2.26 起；原来按现存放位置） ---------------- */
+const NO_PROF='（未填专业）';
+const profMap={};
+ROWS.forEach((r,i)=>{const v=get(r,'所属专业').trim()||NO_PROF;(profMap[v]=profMap[v]||[]).push(i)});
+/* 台数多的在前；「（未填专业）」永远排最后 */
+const PROFS=Object.keys(profMap).sort((a,b)=>{
+  if(a===NO_PROF)return 1;
+  if(b===NO_PROF)return -1;
+  return profMap[b].length-profMap[a].length||a.localeCompare(b,'zh-Hans-CN');
+});
 
-function renderLocs(q){
+function renderProfs(q){
   const kw=(q||'').trim();
-  const list=LOCS.filter(v=>!kw||v.includes(kw));
+  const list=PROFS.filter(v=>!kw||v.includes(kw));
   $('#locList').innerHTML=list.length?list.map(v=>
-    '<button data-l="'+esc(v)+'"><b>'+esc(v)+'</b><span>'+locMap[v].length+' 台</span></button>').join('')
-    :'<div class="empty">没找到这个地点</div>';
-  $('#locList').querySelectorAll('button').forEach(b=>b.onclick=()=>openLoc(b.dataset.l));
+    '<button data-l="'+esc(v)+'"><b>'+esc(v)+'</b><span>'+profMap[v].length+' 台</span></button>').join('')
+    :'<div class="empty">没找到这个专业</div>';
+  $('#locList').querySelectorAll('button').forEach(b=>b.onclick=()=>openProf(b.dataset.l));
 }
-function openLocs(){
-  $('#locq').value='';renderLocs('');
+function openProfs(){
+  $('#locq').value='';renderProfs('');
   show('#sloc');
 }
-function openLoc(l){
-  curLoc=l;editing=false;dirty=false;
+function openProf(l){
+  curProf=l;editing=false;dirty=false;
   devMode='list';devIdx=-1;$('#devDetail').hidden=true;$('#devDetail').innerHTML='';
   $('#devList').hidden=false;
-  const idxs=locMap[l]||[];
+  const idxs=profMap[l]||[];
   $('#devTitle').textContent=l+' · '+idxs.length+' 台';
   $('#devList').innerHTML=idxs.map(i=>{
     const r=ROWS[i];
@@ -754,7 +761,7 @@ function collapseDev(){
   const pane=$('#devDetail');pane.hidden=true;pane.innerHTML='';
   $('#devList').hidden=false;
   $('#editAll').textContent='查明细';
-  $('#devTitle').textContent=(curLoc||'')+' · '+((locMap[curLoc]||[]).length)+' 台';
+  $('#devTitle').textContent=(curProf||'')+' · '+((profMap[curProf]||[]).length)+' 台';
   $('#devList').scrollTop=devScroll;
   dirty=false;
 }
@@ -764,7 +771,7 @@ function toggleDevDetail(){
   if(i>=0)openDevDetail(i);
 }
 function saveAll(){
-  if(curLoc===null)return;
+  if(curProf===null)return;
   if(devMode==='detail'){
     const ta=$('#devDNote');
     if(ta)setNote(ROWS[devIdx],devIdx,ta.value);
@@ -784,7 +791,7 @@ function saveAll(){
 function backDev(){
   if(devMode==='detail'){collapseDev();return}
   if(dirty&&!confirm('有未保存的备注，确定返回？'))return;
-  editing=false;dirty=false;curLoc=null;
+  editing=false;dirty=false;curProf=null;
   show('#sloc');
 }
 
@@ -1224,9 +1231,9 @@ $('#dl').onclick=async()=>{
 $('#back').onclick=goBack;
 $('#back2').onclick=goBack;
 $('#backPick').onclick=()=>{show('#s1');setTimeout(()=>$('#code').focus(),80)};
-$('#locBtn').onclick=openLocs;
+$('#locBtn').onclick=openProfs;
 $('#backLoc').onclick=()=>{show('#s1');setTimeout(()=>$('#code').focus(),80)};
-$('#locq').addEventListener('input',e=>renderLocs(e.target.value));
+$('#locq').addEventListener('input',e=>renderProfs(e.target.value));
 $('#backDev').onclick=backDev;
 $('#backAll').onclick=backDev;
 $('#editAll').onclick=toggleDevDetail;
