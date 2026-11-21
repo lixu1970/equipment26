@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
-<title>教务设备自查系统</title>
+<title>设备位置核查及转移操作系统</title>
 <style>
 :root{
   --accent:#0b62d6;--accent-d:#0a52b5;--ink:#0d1117;--ink2:#4a5460;--line:#d8dee6;
@@ -273,20 +273,18 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
 
 <!-- 查询 -->
 <section class="screen on" id="s1">
-  <h1 class="h1">教务设备自查系统</h1>
-  <p class="hint">输入「初始编号」，如 740-647</p>
+  <h1 class="h1" id="h1">设备位置核查及转移操作系统</h1>
   <input type="text" id="code" inputmode="text" autocomplete="off" autocorrect="off"
          autocapitalize="characters" spellcheck="false" placeholder="初始编号">
   <div class="err" id="err"></div>
   <div class="home-acts">
-    <button class="btn" id="go">查询</button>
+    <button class="btn" id="go">输入编号查询</button>
   </div>
   <div class="pickgroup">
-    <div class="ghd">盘点录入选项</div>
     <div class="gacts">
-      <button class="btn" id="locBtn">按所属专业筛选</button>
-      <button class="btn" id="labBtn">按实训室核查</button>
-      <button class="btn" id="stockBtn">不在账设备或其他备注</button>
+      <button class="btn" id="locBtn">按专业筛选</button>
+      <button class="btn" id="labBtn">按实训室筛选</button>
+      <button class="btn" id="stockBtn">其他不确定可备注</button>
     </div>
   </div>
   <div class="foot" id="foot"></div>
@@ -319,7 +317,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
 <section class="screen" id="sloc">
   <div class="top">
     <button class="back" id="backLoc">‹</button>
-    <div class="code" id="profTitle">按所属专业</div>
+    <div class="code" id="profTitle">按专业筛选</div>
   </div>
   <div class="locsearch"><input type="text" id="locq" placeholder="搜专业或关键字" autocomplete="off"></div>
   <div class="locpick" id="locList"></div>
@@ -359,7 +357,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
 <section class="screen" id="sphoto">
   <div class="top">
     <button class="back" id="backPhoto">‹</button>
-    <div class="code">不在账设备或其他备注</div>
+    <div class="code">其他不确定可备注</div>
   </div>
   <div class="tabs">
     <button class="tab on" data-tab="photos">照片记录</button>
@@ -419,7 +417,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
 <section class="screen" id="slab">
   <div class="top">
     <button class="back" id="backLab">‹</button>
-    <div class="code">按实训室核查</div>
+    <div class="code">按实训室筛选</div>
   </div>
   <div class="locsearch"><input type="text" id="labq" placeholder="搜实训室或场地" autocomplete="off"></div>
   <div class="locpick" id="labList"></div>
@@ -471,7 +469,7 @@ const H=DATA.headers;
 const I={};H.forEach((h,i)=>I[h]=i);
 /* 原表表头与数据列整体错开一列：序号值在第 1 列(A)，表头却标在第 2 列(B)。 */
 if(H[0]==='' && H[1]==='序号') I['序号']=0;
-const VER='v2.29 · 2026-11-20';
+const VER='v2.30 · 2026-11-21';
 const DATA_DATE='2026-11-19';
 const FOOT=document.getElementById('foot');if(FOOT)FOOT.textContent='沙河教务 · '+VER;
 document.querySelectorAll('.ver').forEach(el=>{el.textContent=el.classList.contains('count')?VER+' · 共 '+ROWS.length+' 台':VER});
@@ -728,7 +726,7 @@ async function exportXlsx(){
 }
 async function exportNow(){
   const n=Object.keys(notes).length;
-  if(!n&&!confirm('现在一条备注都没有，导出的表和原表一样。先去「盘点录入」把编号贴上、点「标记「无盘亏」」，再来下载。仍要下载吗？')){
+  if(!n&&!confirm('现在一条备注都没有，导出的表和原表一样。先去「其他不确定可备注 → 按编号标记」把编号贴上、点「标记「无盘亏」」，再来下载。仍要下载吗？')){
     return false;
   }
   try{
@@ -1736,15 +1734,20 @@ $('#sck').addEventListener('input',e=>{
     ckDirty=true;autoSave();
   }
 });
-/* 入口字多：按实际宽度缩字号，保证不换行、不截断 */
-function fitStockBtn(){
-  const b=$('#stockBtn');if(!b)return;
-  b.style.fontSize='';
-  let fs=parseFloat(getComputedStyle(b).fontSize)||20,guard=0;
-  while(b.scrollWidth>b.clientWidth+1&&fs>10&&guard++<40){fs-=0.5;b.style.fontSize=fs.toFixed(1)+'px'}
+/* 字多的地方（大标题、长按钮）：按实际宽度缩字号，保证不换行、不截断 */
+function fitOne(el,min){
+  if(!el)return;
+  el.style.fontSize='';
+  let fs=parseFloat(getComputedStyle(el).fontSize)||20,guard=0;
+  while(el.scrollWidth>el.clientWidth&&fs>(min||10)&&guard++<60){fs-=0.5;el.style.fontSize=fs.toFixed(1)+'px'}
 }
-fitStockBtn();
-window.addEventListener('resize',fitStockBtn);
+function fitTexts(){
+  fitOne($('#h1'),14);
+  fitOne($('#stockBtn'),10);
+  fitOne($('#go'),12);
+}
+fitTexts();
+window.addEventListener('resize',fitTexts);
 setTimeout(()=>$('#code').focus(),120);
 </script>
 </body>
