@@ -258,7 +258,89 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
   .sst b{font-size:14px}
   .sst span{font-size:9.5px}
 }
+/* ---------- 停用开关（v2.37）：先藏住整页，问过 status.json 再放行 ---------- */
+html.gate body{visibility:hidden}
+#lockScreen{position:fixed;inset:0;z-index:2147483647;background:#fff;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:14px;padding:26px;text-align:center;color:var(--ink);
+  font:16px/1.55 -apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",sans-serif;visibility:visible}
+#lockScreen h2{font-size:22px;font-weight:800;margin:0;color:#0b2545}
+#lockScreen p{font-size:14px;color:#4a5460;margin:0;max-width:280px;line-height:1.6;word-break:break-word}
+#lockScreen button{height:44px;min-width:120px;border-radius:12px;border:2px solid var(--accent);
+  background:var(--accent);color:#fff;font:inherit;font-size:16px;font-weight:700;padding:0 20px;cursor:pointer}
+.ownline{font-size:11px;color:#b45309;font-weight:700}
 </style>
+<script>
+/* 停用开关（v2.37）：整页先不可见 → 问 status.json → 放行 / 停用页。1.5 秒没答案就当未停用。 */
+(function(){
+  var OWNER_HASH='9ccb7b2ca7181ffedd0e6fdc840c1b32e7205831ecaf677756afeb6a00a9eb4b';
+  var LK='eq26.owner', root=document.documentElement;
+  root.className=(root.className?root.className+' ':'')+'gate';
+  function unlock(){root.classList.remove('gate')}
+  function isOwner(){try{return localStorage.getItem(LK)===OWNER_HASH}catch(e){return false}}
+  function setOwner(){try{localStorage.setItem(LK,OWNER_HASH)}catch(e){}}
+  function hex(buf){return Array.prototype.map.call(new Uint8Array(buf),function(b){return ('0'+b.toString(16)).slice(-2)}).join('')}
+  function sha(txt){
+    if(!(window.crypto&&window.crypto.subtle&&crypto.subtle.digest))return Promise.reject(new Error('no-subtle'));
+    return crypto.subtle.digest('SHA-256',new TextEncoder().encode(txt)).then(hex);
+  }
+  function stripParam(){
+    try{
+      var u=new URL(location.href);u.searchParams.delete('owner');
+      var q=u.searchParams.toString();
+      history.replaceState(null,'',u.pathname+(q?'?'+q:'')+u.hash);
+    }catch(e){}
+  }
+  function whenBody(fn){if(document.body)return fn();document.addEventListener('DOMContentLoaded',fn)}
+  function lock(msg){
+    root.classList.add('gate');
+    whenBody(function(){
+      var d=document.getElementById('lockScreen');
+      if(!d){
+        d=document.createElement('div');d.id='lockScreen';
+        d.innerHTML='<h2>本系统已停用</h2><p id="lockMsg"></p><button type="button" id="lockClose">关闭</button>';
+        document.body.appendChild(d);
+        d.querySelector('#lockClose').addEventListener('click',function(){try{window.close()}catch(e){}});
+      }
+      d.querySelector('#lockMsg').textContent=msg||'如需恢复请联系管理员。';
+    });
+  }
+  function markOwnerLocked(){
+    whenBody(function(){
+      var f=document.getElementById('foot');
+      if(!f||f.textContent.indexOf('仅管理员可用')>=0)return;
+      f.insertAdjacentHTML('beforeend','<br><span class="ownline">已停用 · 仅管理员可用</span>');
+    });
+  }
+  function check(){
+    var q=null;
+    try{q=new URLSearchParams(location.search).get('owner')}catch(e){}
+    var pre=Promise.resolve();
+    if(q){
+      pre=sha(q).then(function(h){if(h===OWNER_HASH)setOwner()}).catch(function(){}).then(stripParam);
+    }
+    return pre.then(function(){
+      var ctl=null;
+      try{ctl=new AbortController()}catch(e){}
+      var opt={cache:'no-store'};
+      if(ctl)opt.signal=ctl.signal;
+      var req=fetch('status.json?_='+Date.now(),opt)
+        .then(function(r){if(!r.ok)throw new Error('http');return r.json()})
+        .catch(function(){return null});
+      /* 1.5 秒没答案就当未停用：用 race，连请求卡死（不响应 abort）也能放行 */
+      var hang=new Promise(function(res){setTimeout(function(){try{ctl&&ctl.abort()}catch(e){}res(null)},1500)});
+      return Promise.race([req,hang]);
+    }).then(function(j){
+      if(!j)return unlock();                       /* 404 / 断网 / JSON 坏 → 当未停用 */
+      if(j.locked!==true)return unlock();          /* 没锁 → 正常 */
+      if(isOwner()){unlock();markOwnerLocked();return}  /* 自己人：照用，页脚加一行 */
+      lock(j.msg);
+    });
+  }
+  window.__eqGate={check:check,lock:lock,unlock:unlock,isOwner:isOwner,hash:OWNER_HASH};
+  check();
+  window.addEventListener('pageshow',function(e){if(e.persisted)check()});
+})();
+</script>
 </head>
 <body>
 
@@ -424,7 +506,7 @@ const H=DATA.headers;
 const I={};H.forEach((h,i)=>I[h]=i);
 /* 原表表头与数据列整体错开一列：序号值在第 1 列(A)，表头却标在第 2 列(B)。 */
 if(H[0]==='' && H[1]==='序号') I['序号']=0;
-const VER='v2.36 · 2026-11-21';
+const VER='v2.37 · 2026-11-21';
 const DATA_DATE='2026-11-19';
 const FOOT=document.getElementById('foot');if(FOOT)FOOT.textContent='沙河教务 · '+VER;
 document.querySelectorAll('.ver').forEach(el=>{el.textContent=el.classList.contains('count')?VER+' · 共 '+ROWS.length+' 台':VER});
