@@ -57,6 +57,13 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
 .ghd::before{content:'';display:inline-block;width:4px;height:14px;border-radius:2px;
   background:var(--accent);margin-right:6px;vertical-align:-2px}
 .foot{font-size:12px;color:#7b8794;text-align:center;letter-spacing:.4px;font-weight:600}
+/* 首页汇总块（v2.33）：数字由内嵌数据现算，别写死 */
+.sumstat{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#f5f9ff;border:1px solid #dbe7f8;
+  border-radius:12px;padding:8px 10px;flex:0 0 auto}
+.sst{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-width:0}
+.sst b{font-size:22px;font-weight:800;color:var(--accent);line-height:1.15;white-space:nowrap;
+  letter-spacing:.2px;font-variant-numeric:tabular-nums;max-width:100%}
+.sst span{font-size:12px;color:#5b6b7f;font-weight:600;line-height:1.2;white-space:nowrap}
 .err{color:var(--warn);font-size:15px;font-weight:600;margin:0;text-align:center}
 .err:empty{display:none}
 
@@ -198,6 +205,9 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
   :root{--pad:10px;--gap:8px;--btn-h:44px;--btn-fs:17px;--fs-base:17px}
   #s1 .hint{display:none}
   .h1{font-size:22px;letter-spacing:2px}
+  .sumstat{grid-template-columns:repeat(4,1fr);gap:5px;padding:4px 6px}
+  .sst b{font-size:16px}
+  .sst span{font-size:10px}
   .home-acts{grid-template-columns:1fr}
   .gacts{grid-template-columns:1fr 1fr 1fr}
   .grid{grid-template-columns:1fr 1fr}
@@ -240,6 +250,9 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
   #phTxt{height:46px;min-height:46px;font-size:15px}
   .phitem{padding:5px 7px;gap:8px}
   .phthumb{width:44px;height:44px}
+  .sumstat{padding:3px 5px;gap:4px}
+  .sst b{font-size:14px}
+  .sst span{font-size:9.5px}
 }
 </style>
 </head>
@@ -260,6 +273,12 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
       <button class="btn" id="labBtn">按实训室筛选</button>
       <button class="btn" id="stockBtn">其他不确定可备注</button>
     </div>
+  </div>
+  <div class="sumstat" id="sumStat">
+    <div class="sst"><b id="ssTotal">—</b><span>总台数</span></div>
+    <div class="sst"><b id="ssMoney">—</b><span>总金额</span></div>
+    <div class="sst"><b id="ssProf">—</b><span>专业</span></div>
+    <div class="sst"><b id="ssLab">—</b><span>实训室</span></div>
   </div>
   <div class="foot" id="foot"></div>
 </section>
@@ -412,7 +431,7 @@ const H=DATA.headers;
 const I={};H.forEach((h,i)=>I[h]=i);
 /* 原表表头与数据列整体错开一列：序号值在第 1 列(A)，表头却标在第 2 列(B)。 */
 if(H[0]==='' && H[1]==='序号') I['序号']=0;
-const VER='v2.32 · 2026-11-21';
+const VER='v2.33 · 2026-11-21';
 const DATA_DATE='2026-11-19';
 const FOOT=document.getElementById('foot');if(FOOT)FOOT.textContent='沙河教务 · '+VER;
 document.querySelectorAll('.ver').forEach(el=>{el.textContent=el.classList.contains('count')?VER+' · 共 '+ROWS.length+' 台':VER});
@@ -1518,7 +1537,27 @@ function fitTexts(){
   fitOne($('#h1'),14);
   fitOne($('#stockBtn'),10);
   fitOne($('#go'),12);
+  ['#ssTotal','#ssMoney','#ssProf','#ssLab'].forEach(s=>fitOne($(s),13));
 }
+/* 首页汇总块（v2.33）：四个数全部从内嵌数据现算，换母表自动跟着走，别写死 */
+function renderSum(){
+  let money=0;
+  const profs=new Set(), labs=new Set();
+  ROWS.forEach(r=>{
+    const v=parseFloat(get(r,'账面价值').replace(/[^0-9.]/g,''));
+    if(isFinite(v))money+=v;
+    const p=get(r,'所属专业').trim();
+    if(p&&p!=='无')profs.add(p);
+    const l=get(r,'现存放位置20260123').trim();
+    if(LABRE.test(l))labs.add(l);
+  });
+  const set=(s,t)=>{const el=$(s);if(el)el.textContent=t};
+  set('#ssTotal',ROWS.length+' 台');
+  set('#ssMoney','¥'+(money/10000).toFixed(1)+' 万');
+  set('#ssProf',profs.size+' 个');
+  set('#ssLab',labs.size+' 个');
+}
+renderSum();
 fitTexts();
 window.addEventListener('resize',fitTexts);
 setTimeout(()=>$('#code').focus(),120);
