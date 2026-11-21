@@ -119,7 +119,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
 .dtnhint{margin:6px 0 0;font-size:13px;font-weight:600;color:var(--ink2)}
 
 /* ---------- 场地设备列表 ---------- */
-#devTitle{white-space:normal;line-height:1.25;font-size:18px}
+#devTitle,#ckTitle{white-space:normal;line-height:1.25;font-size:18px}
 .devlist{display:flex;flex-direction:column;gap:var(--gap);overflow:auto;flex:1;min-height:0;padding:2px 0}
 .devrow{background:#f7f9fc;border:1px solid #e6ecf4;border-radius:12px;padding:9px 11px;flex:0 0 auto}
 .devtop{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;cursor:pointer}
@@ -145,13 +145,6 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
 .pgbar i{display:block;height:100%;width:0;background:var(--accent);transition:width .25s}
 .pgtxt{font-size:15px;font-weight:800;color:#3f4a57;white-space:nowrap}
 .ckscroll{overflow:auto;flex:1;min-height:0;padding:2px 0;-webkit-overflow-scrolling:touch}
-.ckcard{background:#f7f9fc;border:1px solid #e6ecf4;border-radius:14px;padding:10px 12px}
-.ckpos{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
-.ckno{font-size:14px;font-weight:800;color:#3f4a57}
-.ckname{font-size:clamp(19px,5.6vw,23px);font-weight:800;line-height:1.25;word-break:break-word;flex:1;min-width:0}
-.ckmeta{font-size:15px;color:var(--ink2);line-height:1.4;margin:4px 0 6px;word-break:break-word}
-.ckflag{display:flex;gap:8px;flex-wrap:wrap}
-.ckcard .devnote{background:#fff}
 /* ---------- 三选一：未盘亏 / 盘亏 / 其他（v2.34） ---------- */
 .trio{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}
 .trio .opt{height:40px;min-width:0;border:2px solid var(--line);border-radius:10px;background:#fff;
@@ -175,8 +168,6 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
 .dtbar span{font-size:14px;font-weight:700;color:var(--ink2)}
 .dtbar .btn{height:36px;font-size:15px;padding:0 14px;box-shadow:none}
 .actions-row.three{grid-template-columns:repeat(3,1fr)}
-.cknav3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--gap);flex:0 0 auto}
-.cknav3 .btn{font-size:clamp(15px,4.4vw,18px);padding:0 2px}
 
 /* ---------- 其他不确定可备注：备注说明 + 照片记录 ---------- */
 .phgrid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;flex:0 0 auto}
@@ -236,9 +227,6 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
   .ver{font-size:12px;padding:2px 0}
   .back{width:38px;height:38px;font-size:20px}
   .locsearch input{height:40px;font-size:16px}
-  #sck .ckname{font-size:19px}
-  #sck .ckmeta{font-size:14px;margin:2px 0 4px}
-  .ckcard{padding:8px 10px}
   .devnote{min-height:60px}
   .phwarn{display:none}
   #phTxt{height:56px;min-height:56px}
@@ -246,21 +234,19 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
 /* ---------- 横屏：核查页分两栏（左看卡片，右按按钮） ---------- */
 @media (orientation:landscape){
   #sck.on{display:grid;grid-template-columns:1.08fr .92fr;
-    grid-template-rows:auto auto 1fr auto auto;column-gap:10px;row-gap:6px}
+    grid-template-rows:auto auto 1fr auto;column-gap:10px;row-gap:6px}
   #sck .top{grid-column:1 / -1;grid-row:1}
   #sck .pg{grid-column:1 / -1;grid-row:2}
-  #ckScroll{grid-column:1;grid-row:3 / 5;min-height:0}
-  #ckDetail{grid-column:1;grid-row:3 / 5;min-height:0}
-  #sck .cknav3{grid-column:2;grid-row:3;align-self:start}
-  #sck .actions-row{grid-column:2;grid-row:4;align-self:start}
-  #sck .ver{grid-column:1 / -1;grid-row:5}
+  #ckList{grid-column:1;grid-row:3;min-height:0}
+  #ckDetail{grid-column:1;grid-row:3;min-height:0}
+  #sck .actions-row{grid-column:2;grid-row:3;align-self:start}
+  #sck .ver{grid-column:1 / -1;grid-row:4}
 }
 /* ---------- 很矮的横屏：再压一层 ---------- */
 @media (orientation:landscape) and (max-height:430px){
   :root{--pad:8px;--gap:6px;--btn-h:38px;--btn-fs:15px;--fs-base:16px}
   .h1{font-size:20px}
   .actions-row .btn{font-size:14px}
-  .cknav3 .btn{font-size:14px}
   .pgbar{height:8px}
   .pgtxt{font-size:13px}
   .phgrid3 .btn{height:36px;font-size:15px}
@@ -420,13 +406,8 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
     <div class="code" id="ckTitle">—</div>
   </div>
   <div class="pg"><div class="pgbar"><i id="pgFill"></i></div><div class="pgtxt" id="pgTxt">0/0 已查</div></div>
-  <div class="ckscroll" id="ckScroll"></div>
+  <div class="devlist" id="ckList"></div>
   <div class="detailpane" id="ckDetail" hidden></div>
-  <div class="cknav3">
-    <button class="btn" data-act="prev">‹ 上一台</button>
-    <button class="btn primary" data-act="next">下一台 →</button>
-    <button class="btn" data-act="skip">跳过</button>
-  </div>
   <div class="actions-row three">
     <button class="btn green" id="saveCk">保存</button>
     <button class="btn" id="dlCk">更新下载</button>
@@ -442,7 +423,7 @@ const H=DATA.headers;
 const I={};H.forEach((h,i)=>I[h]=i);
 /* 原表表头与数据列整体错开一列：序号值在第 1 列(A)，表头却标在第 2 列(B)。 */
 if(H[0]==='' && H[1]==='序号') I['序号']=0;
-const VER='v2.34 · 2026-11-21';
+const VER='v2.35 · 2026-11-21';
 const DATA_DATE='2026-11-19';
 const FOOT=document.getElementById('foot');if(FOOT)FOOT.textContent='沙河教务 · '+VER;
 document.querySelectorAll('.ver').forEach(el=>{el.textContent=el.classList.contains('count')?VER+' · 共 '+ROWS.length+' 台':VER});
@@ -833,7 +814,9 @@ function collapseDev(){
   devIdx=-1;devMode='list';
   const pane=$('#devDetail');pane.hidden=true;pane.innerHTML='';
   $('#devList').hidden=false;
-  $('#devTitle').textContent=(curProf||'')+' · '+((profMap[curProf]||[]).length)+' 台';
+  $('#devTitle').textContent=(curProf||'')
+    +(curProfLoc?' · '+curProfLoc:'')
+    +' · '+((profMap[curProf]||[]).filter(i=>locOf(i)===curProfLoc).length)+' 台';
   $('#devList').scrollTop=devScroll;
   $('#devList').querySelectorAll('.trio').forEach(b=>{
     const box=b.closest('.devrow');
@@ -859,7 +842,7 @@ function saveAll(){
 function backDev(){
   if(devMode==='detail'){collapseDev();return}
   if(dirty&&!confirm('有未保存的选择，确定返回？'))return;
-  editing=false;dirty=false;
+  editing=false;clearPending();
   if(curProf){openProfLoc(curProf);return}   /* 设备 → 场地 */
   show('#sloc');
 }
@@ -940,19 +923,17 @@ function pickOpt(i,v,anchor){
   dirty=true;ckDirty=true;
   paintTrio(anchor&&anchor.closest('.trio'),i);
 }
-/* 把界面上选好的写进 notes（点「保存」、切台、离开时调） */
+/* 丢掉界面上没保存的选择（点「返回」并确认时用） */
+function clearPending(){
+  Object.keys(pending).forEach(k=>delete pending[k]);
+  dirty=false;ckDirty=false;
+}
+/* 把界面上选好的写进 notes（只由「保存 / 更新下载」调） */
 function flushPending(){
   const ks=Object.keys(pending);if(!ks.length)return 0;
   ks.forEach(k=>{const i=+k;setNote(ROWS[i],i,noteForSel(pending[k]))});
   try{localStorage.setItem(KEY,JSON.stringify(notes))}catch(e){}
   return ks.length;
-}
-let ckMsgT=0;
-function ckMsg(text,kind){
-  const el=$('#ckMsg');if(!el)return;
-  el.className='ckmsg'+(kind?' '+kind:'');
-  el.textContent=text;el.hidden=false;
-  clearTimeout(ckMsgT);ckMsgT=setTimeout(()=>{el.hidden=true},3600);
 }
 
 /* 分组：按「现存放位置」；LABRE 只做「是不是实训室」的判定，分组结果与文案无关，别动 */
@@ -968,7 +949,7 @@ const GNAMES=Object.keys(GRP).sort((a,b)=>{
   if(la)return GRP[b].length-GRP[a].length||a.localeCompare(b,'zh-Hans-CN');
   return a.localeCompare(b,'zh-Hans-CN');
 });
-let gLoc=null,gProf=null,gIdx=[],gPos=0,ckDirty=false;
+let gLoc=null,gProf=null,gIdx=[],ckDirty=false;
 /* 已查 = 这台的后备注有内容（未盘亏 / 盘亏 / 其他都算查过了）；两条路径同一个判定 */
 const isChk=(r,i)=>!!noteOf(r,i).trim();
 function gDone(idxs){let n=0;idxs.forEach(i=>{if(isChk(ROWS[i],i))n++});return n}
@@ -1014,27 +995,19 @@ function openLabProfs(lab){
 function openCkSub(lab,prof){
   gLoc=lab;gProf=prof;
   gIdx=(GRP[lab]||[]).filter(i=>(get(ROWS[i],'所属专业').trim()||NO_PROF)===prof);
-  gPos=0;ckDirty=false;ckMode='list';ckDidx=-1;
+  ckDirty=false;ckMode='list';ckDidx=-1;
   const pn=$('#ckDetail');if(pn){pn.hidden=true;pn.innerHTML=''}
-  for(let k=0;k<gIdx.length;k++){if(!isChk(ROWS[gIdx[k]],gIdx[k])){gPos=k;break}}
+  $('#ckList').hidden=false;
   renderCk();show('#sck');
 }
 function openCk(l){
-  gLoc=l;gProf=null;gIdx=(GRP[l]||[]).slice();gPos=0;ckDirty=false;
+  gLoc=l;gProf=null;gIdx=(GRP[l]||[]).slice();ckDirty=false;
   ckMode='list';ckDidx=-1;
   const pn=$('#ckDetail');if(pn){pn.hidden=true;pn.innerHTML=''}
-  for(let k=0;k<gIdx.length;k++){if(!isChk(ROWS[gIdx[k]],gIdx[k])){gPos=k;break}}
+  $('#ckList').hidden=false;
   renderCk();show('#sck');
 }
-/* 状态标签：只显示，不点（改结论直接点下面三个选项） */
-function flagHtml(i){
-  const note=noteOf(ROWS[i],i), st=noteConclusion(note);
-  const lab=st||((note||'').trim()?'其他':'');
-  const a=lab
-    ?'<span class="tag">已记 '+esc(lab)+'</span>'
-    :'<span class="tag" style="background:#eef1f6;color:#4a5460;border-color:#d8dee6">未查</span>';
-  return a+(PEND[i]?'<span class="tag warn">位置待核</span>':'');
-}
+/* 这一页和设备列表页同一套：一次把这一组（实训室 + 专业）的设备全列出来，每台一张卡 + 三选一 */
 function setBar(){
   const done=gDone(gIdx);
   $('#pgFill').style.width=(gIdx.length?done*100/gIdx.length:0)+'%';
@@ -1042,40 +1015,28 @@ function setBar(){
 }
 function renderCk(){
   if(!gIdx.length)return;
-  gPos=Math.max(0,Math.min(gPos,gIdx.length-1));
-  const i=gIdx[gPos],r=ROWS[i];
   $('#ckTitle').innerHTML=esc(gLoc)+(LABRE.test(gLoc)?' <span class="tag">实训室</span>':'')+(gProf?' · '+esc(gProf):'');
   setBar();
-  const loc=get(r,'现存放位置20260123').trim();
-  const meta=['初始编号 '+(get(r,'初始编号')||'—'),'现存放 '+loc].filter(Boolean);
-  $('#ckScroll').innerHTML=
-     '<div class="ckcard">'
-    +'<div class="ckpos"><span class="ckno">序号 '+esc(get(r,'序号')||'—')+'</span>'
-    +'<span class="ckname">'+esc(get(r,'资产名称'))+'</span></div>'
-    +'<div class="ckmeta">'+meta.map(esc).join(' · ')+'</div>'
-    +'<div class="ckflag" id="ckFlag">'+flagHtml(i)+'</div>'
-    +'<div class="ckmsg" id="ckMsg" hidden></div>'
-    +trioHtml(i)
-    +'</div>';
+  $('#ckList').innerHTML=gIdx.map(i=>{
+    const r=ROWS[i];
+    return '<div class="devrow" data-row="'+i+'">'
+      +'<div class="devtop" data-i="'+i+'"><span class="devno">'+esc(get(r,'序号'))+'</span>'
+      +'<span class="devname">'+esc(get(r,'资产名称'))+'</span>'
+      +'<span class="devspec">'+esc(get(r,'初始编号')||'—')+'</span></div>'
+      +trioHtml(i)
+      +'</div>';
+  }).join('');
+  paintCkList();
 }
-/* 切台 / 保存前，把当前这台选好的写进 notes */
-function ckCommit(){flushPending();ckDirty=false;dirty=false}
-function ckAct(a){
-  if(a==='closedt'){collapseCk();return}
-  if(a==='prev'){ckCommit();gPos=Math.max(0,gPos-1);renderCk();return}
-  if(a==='skip'){ckCommit();gPos=Math.min(gIdx.length-1,gPos+1);renderCk();return}
-  if(a==='next'){
-    ckCommit();
-    let j=-1,k,idx;
-    for(k=gPos+1;k<gIdx.length;k++){idx=gIdx[k];if(!isChk(ROWS[idx],idx)){j=k;break}}
-    if(j<0)for(k=0;k<gIdx.length;k++){idx=gIdx[k];if(!isChk(ROWS[idx],idx)){j=k;break}}
-    if(j<0){$('#pgTxt').textContent='本组已全部查完 ✓';return}
-    gPos=j;renderCk();
-  }
+function paintCkList(){
+  $('#ckList').querySelectorAll('.trio').forEach(b=>{
+    const box=b.closest('.devrow');
+    if(box&&box.dataset.row!=null)paintTrio(b,+box.dataset.row);
+  });
 }
 let ckMode='list',ckDidx=-1;
-function openCkDetail(){
-  const i=gIdx[gPos];if(i==null)return;
+function openCkDetail(i){
+  if(i==null||i<0)return;
   if(ckMode==='detail')return;
   ckDidx=i;ckMode='detail';
   const pane=$('#ckDetail');
@@ -1083,7 +1044,7 @@ function openCkDetail(){
     +'<button class="btn" data-act="closedt">收起</button></div>'
     +'<div class="grid">'+detailFields(i)+detailNoteHTML('ckDNote',noteOf(ROWS[i],i))+'</div>';
   pane.hidden=false;pane.scrollTop=0;
-  $('#ckScroll').hidden=true;
+  $('#ckList').hidden=true;
   ckDirty=false;
 }
 function collapseCk(){
@@ -1096,13 +1057,14 @@ function collapseCk(){
   }
   ckDidx=-1;ckMode='list';
   const pane=$('#ckDetail');pane.hidden=true;pane.innerHTML='';
-  $('#ckScroll').hidden=false;
-  renderCk();
+  $('#ckList').hidden=false;
+  paintCkList();setBar();ckDirty=false;
 }
 function backLab(){
   if(ckMode==='detail'){collapseCk();return}
   if(ckDirty&&!confirm('有未保存的选择，确定返回？'))return;
-  ckCommit();
+  ckDirty=false;dirty=false;
+  clearPending();
   if(gProf){renderLabProfs();show('#slprof');return}   /* 核查 → 本室专业列表 */
   renderLabs($('#labq').value);show('#slab');
 }
@@ -1419,33 +1381,35 @@ $('#backLab').onclick=()=>{show('#s1');setTimeout(()=>$('#code').focus(),80)};
 $('#labq').addEventListener('input',e=>renderLabs(e.target.value));
 $('#backCk').onclick=backLab;
 $('#backCk2').onclick=backLab;
+/* 这一页的口径和设备列表页一样：点「保存」才写，切页不自动写 */
 $('#saveCk').onclick=()=>{
   if(ckMode==='detail'){
     const ta=$('#ckDNote');
     if(ta)setNote(ROWS[ckDidx],ckDidx,ta.value);
   }
-  ckCommit();
+  flushPending();
   try{localStorage.setItem(KEY,JSON.stringify(notes))}catch(e){}
-  if(ckMode==='list')renderCk();
+  dirty=false;ckDirty=false;
+  paintCkList();setBar();
   flash('#saveCk','已保存');
 };
 $('#dlCk').onclick=async()=>{
   if(ckMode==='detail'){const ta=$('#ckDNote');if(ta)setNote(ROWS[ckDidx],ckDidx,ta.value)}
-  ckCommit();
+  flushPending();
+  try{localStorage.setItem(KEY,JSON.stringify(notes))}catch(e){}
+  dirty=false;ckDirty=false;
+  paintCkList();setBar();
   if(await exportNow())flash('#dlCk','已下载');
 };
 $('#sck').addEventListener('click',e=>{
   const opt=e.target.closest('.trio .opt');
   if(opt){pickOpt(+opt.dataset.i,opt.dataset.v,opt);return}
-  const b=e.target.closest('[data-act]');if(b){ckAct(b.dataset.act);return}
-  /* 明细态：点明细条（标题那一条）也能收起，等于「再点一下」 */
-  if(ckMode==='detail'&&e.target.closest('.dtbar'))collapseCk();
+  if(e.target.closest('[data-act="closedt"]')||(ckMode==='detail'&&e.target.closest('.dtbar'))){collapseCk();return}
 });
-/* 点卡片（三选一以外的地方）打开明细，再点「收起」回来 */
-$('#ckScroll').addEventListener('click',e=>{
-  if(e.target.closest('.trio'))return;
-  if(ckMode!=='list')return;
-  openCkDetail();
+/* 点卡片顶行（序号/名称/初始编号）打开明细，明细上「收起」回来 */
+$('#ckList').addEventListener('click',e=>{
+  const t=e.target.closest('.devtop');
+  if(t&&t.dataset.i!=null)openCkDetail(+t.dataset.i);
 });
 /* 字多的地方（大标题、长按钮）：按实际宽度缩字号，保证不换行、不截断 */
 function fitOne(el,min){
