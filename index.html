@@ -120,10 +120,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
 .devspec{font-size:13px;color:var(--ink2)}
 
 /* ---------- 盘点录入 ---------- */
-#stockIn{flex:0 0 auto;height:110px;border:2px solid var(--line);border-radius:12px;padding:10px 12px;
-  font:inherit;font-size:17px;line-height:1.4;color:var(--ink);background:#fff;resize:none;width:100%;
-  -webkit-user-select:text;user-select:text}
-#stockIn:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(11,98,214,.14);outline:none}
+
 .stockout{flex:1;min-height:0;overflow:auto;font-size:16px;line-height:1.5;color:var(--ink);
   background:#f7f9fc;border:1px solid #e6ecf4;border-radius:12px;padding:10px 12px}
 .stockout b{color:var(--accent)}
@@ -153,26 +150,13 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
 .cknav3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--gap);flex:0 0 auto}
 .cknav3 .btn{font-size:clamp(15px,4.4vw,18px);padding:0 2px}
 
-/* ---------- 不在账设备或其他备注：页签 + 照片记录 ---------- */
-.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:0 0 auto}
-.tab{height:42px;border:2px solid var(--accent);border-radius:12px;background:#e8f0fd;color:var(--accent);
-  font:inherit;font-size:16px;font-weight:800;cursor:pointer}
-.tab.on{background:var(--accent);color:#fff;box-shadow:var(--shadow)}
-.ptab{display:none;flex:1;min-height:0;flex-direction:column;gap:7px}
-.ptab.on{display:flex}
-.phform{display:flex;flex-direction:column;gap:6px;flex:0 0 auto}
-.phrow{display:flex;align-items:center;gap:8px}
-.phlb{font-size:14px;font-weight:800;color:#3f4a57;flex:0 0 auto}
-#phCat{flex:1;min-width:0;height:40px;border:2px solid var(--line);border-radius:10px;background:#fff;
-  font:inherit;font-size:15px;font-weight:700;color:var(--ink);padding:0 8px}
-#phCatCustom{flex:1;min-width:0;height:40px;border:2px solid var(--line);border-radius:10px;padding:0 10px;
-  font:inherit;font-size:15px;font-weight:700;color:var(--ink)}
-#phNote{width:100%;height:56px;min-height:56px;border:2px solid var(--line);border-radius:10px;padding:8px 10px;
-  font:inherit;font-size:15px;line-height:1.35;color:var(--ink);background:#fff;resize:vertical;
-  -webkit-user-select:text;user-select:text}
-#phNote:focus,#phCatCustom:focus{border-color:var(--accent);outline:none;box-shadow:inset 0 0 0 1px rgba(11,98,214,.35)}
-.phadd{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-.phadd .btn{height:44px;font-size:16px;padding:0 2px;-webkit-tap-highlight-color:transparent;cursor:pointer}
+/* ---------- 其他不确定可备注：备注说明 + 照片记录 ---------- */
+.phgrid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;flex:0 0 auto}
+.phgrid3 .btn{height:44px;font-size:clamp(14px,4.4vw,16px);padding:0 2px;white-space:nowrap}
+#phTxt{width:100%;height:92px;min-height:64px;border:2px solid var(--line);border-radius:12px;padding:9px 11px;
+  font:inherit;font-size:16px;line-height:1.4;color:var(--ink);background:#fff;resize:vertical;
+  -webkit-user-select:text;user-select:text;flex:0 0 auto}
+#phTxt:focus{border-color:var(--accent);outline:none;box-shadow:inset 0 0 0 1px rgba(11,98,214,.35)}
 .phfile{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;opacity:0;
   overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;pointer-events:none}
 .phlist{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:8px;padding:2px 0}
@@ -182,11 +166,15 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
 .phmeta{flex:1;min-width:0}
 .phnote{font-size:14px;color:var(--ink);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .phtime{font-size:12px;color:#7b8794;font-weight:600}
-.phfoot{flex:0 0 auto;font-size:13px;font-weight:800;color:#4a5460;text-align:center}
-.phacts{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:0 0 auto}
-.phacts .btn{height:44px;font-size:16px}
-.phwarn{flex:0 0 auto;margin:0;padding:6px 9px;border-radius:10px;background:#fff6e5;border:1px solid #f0d3ae;
+.phwarn{flex:0 0 auto;margin:0;padding:5px 9px;border-radius:10px;background:#fff6e5;border:1px solid #f0d3ae;
   color:#8a5008;font-size:12px;line-height:1.3;font-weight:600}
+/* 二次选择：底部弹出 */
+.phsheet{position:absolute;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));
+  background:#fff;border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:8px;
+  box-shadow:0 -6px 28px rgba(0,0,0,.35)}
+.phshtitle{font-size:14px;font-weight:800;color:#3f4a57;text-align:center;padding:2px 0 2px}
+.phsheet .btn{height:48px;font-size:17px}
+.phsheet .btn.cancel{background:#eef1f6;border-color:#eef1f6;color:#2d3a4b;box-shadow:none}
 /* 点开大图 */
 .phmodal{position:fixed;inset:0;z-index:60;background:rgba(8,16,28,.92);display:flex;flex-direction:column;
   gap:8px;padding:10px calc(10px + env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) calc(10px + env(safe-area-inset-left))}
@@ -217,23 +205,13 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
   .ver{font-size:12px;padding:2px 0}
   .back{width:38px;height:38px;font-size:20px}
   .locsearch input{height:40px;font-size:16px}
-  #stockIn{height:80px}
   #sck .ckname{font-size:19px}
   #sck .ckmeta{font-size:14px;margin:2px 0 4px}
   .ckcard{padding:8px 10px}
   .inbox .btn{font-size:19px}
   .devnote{min-height:60px}
-  #sstock .small-hint{display:none}
-  #tabCodes .hint{font-size:14px}
   .phwarn{display:none}
-  #phNote{height:46px;min-height:46px}
-  .tabs{grid-template-columns:1fr 1fr}
-  /* 横屏：左边填表，右边看列表 */
-  #tabPhotos{display:grid;grid-template-columns:45% 1fr;grid-template-rows:1fr auto auto;column-gap:10px;row-gap:6px}
-  .phform{grid-column:1;grid-row:1 / 4;overflow:auto}
-  #phList{grid-column:2;grid-row:1}
-  .phfoot{grid-column:2;grid-row:2}
-  .phacts{grid-column:2;grid-row:3}
+  #phTxt{height:56px;min-height:56px}
 }
 /* ---------- 横屏：核查页分两栏（左看卡片，右按按钮） ---------- */
 @media (orientation:landscape){
@@ -257,13 +235,8 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
   .inbox .btn{font-size:18px}
   .pgbar{height:8px}
   .pgtxt{font-size:13px}
-  #stockIn{height:52px}
-  #tabCodes .hint{font-size:13px;line-height:1.3}
-  .tab{height:32px;font-size:14px}
-  .phadd .btn,.phacts .btn{height:34px;font-size:14px}
-  #phNote{height:36px;min-height:36px;font-size:14px}
-  #phCat{height:34px;font-size:14px}
-  .phfoot{font-size:12px}
+  .phgrid3 .btn{height:36px;font-size:15px}
+  #phTxt{height:46px;min-height:46px;font-size:15px}
   .phitem{padding:5px 7px;gap:8px}
   .phthumb{width:44px;height:44px}
 }
@@ -353,64 +326,33 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
   <div class="ver"></div>
 </section>
 
-<!-- 不在账设备或其他备注：照片记录 / 按编号标记 -->
+<!-- 其他不确定可备注：备注说明 + 照片记录 -->
 <section class="screen" id="sphoto">
   <div class="top">
     <button class="back" id="backPhoto">‹</button>
     <div class="code">其他不确定可备注</div>
   </div>
-  <div class="tabs">
-    <button class="tab on" data-tab="photos">照片记录</button>
-    <button class="tab" data-tab="codes">按编号标记</button>
+
+  <div class="phgrid3">
+    <button class="btn" id="phTxtFocus">备注说明录入</button>
+    <button class="btn" id="phTxtSave">保存导出</button>
+    <button class="btn" id="phTxtClear">清屏</button>
+  </div>
+  <textarea id="phTxt" placeholder="点这里输入备注说明"></textarea>
+
+  <div class="phgrid3">
+    <button class="btn" id="phAdd">拍照/相册</button>
+    <button class="btn" id="phPicSave">保存导出</button>
+    <button class="btn" id="phPicClear">清屏</button>
   </div>
 
-  <div class="ptab on" id="tabPhotos">
-    <div class="phform">
-      <div class="phrow">
-        <label class="phlb" for="phCat">分类</label>
-        <select id="phCat">
-          <option>不在账设备</option>
-          <option>其他备注</option>
-          <option>待处理</option>
-          <option>报修</option>
-          <option value="__custom">自定…</option>
-        </select>
-        <input type="text" id="phCatCustom" placeholder="填分类名" hidden>
-      </div>
-      <textarea id="phNote" rows="2" placeholder="备注：这条记录是什么情况（可留空）"></textarea>
-      <div class="phadd">
-        <label class="btn" for="phCamIn" id="phCam">拍照</label>
-        <label class="btn" for="phPickIn" id="phPick">相册</label>
-        <button class="btn" id="phPaste">粘贴</button>
-      </div>
-      <div class="hintbar" id="phPasteHint" hidden>长按上面的备注框，点「粘贴」就能贴进截图</div>
-      <div class="hintbar" id="phMemWarn" hidden>这个打开方式浏览器不让存照片，只能临时留在本页；请用线上网址打开再拍。关掉页面就没了，记得先导出。</div>
-      <div class="hintbar" id="phErr" hidden></div>
-      <input type="file" id="phCamIn" class="phfile" accept="image/*" capture="environment">
-      <input type="file" id="phPickIn" class="phfile" accept="image/*" multiple>
-    </div>
-    <div class="phlist" id="phList"></div>
-    <div class="phfoot" id="phCount">共 0 条 · 0 张照片</div>
-    <div class="phacts">
-      <button class="btn" id="phExpAll">导出全部</button>
-      <button class="btn" id="phExpCat">导出当前分类</button>
-    </div>
-    <p class="phwarn">照片只存在本机浏览器，清缓存或长期不用可能被清掉，重要的请及时导出。</p>
-  </div>
+  <div class="phlist" id="phList"></div>
 
-  <div class="ptab" id="tabCodes">
-    <p class="hint">对着标签拍照，认到就直接标；也可以把「设备编号」贴到下面框里手动标。</p>
-    <input type="file" id="camIn" accept="image/*" capture="environment" hidden>
-    <button class="btn" id="snapBtn">拍照识别编号</button>
-    <textarea id="stockIn" placeholder="也可以直接把编号贴这里（一行一个）"></textarea>
-    <div class="sacts">
-      <button class="btn" id="stockGo">标记「无盘亏」</button>
-      <button class="btn" id="stockDl">更新下载</button>
-    </div>
-    <div class="stockout" id="stockOut">还没标记。</div>
-  </div>
-
+  <p class="phwarn">照片只存在本机浏览器，清缓存或长期不用可能被清掉，重要的请及时导出。</p>
   <div class="ver"></div>
+
+  <input type="file" id="phCamIn" class="phfile" accept="image/*" capture="environment">
+  <input type="file" id="phPickIn" class="phfile" accept="image/*" multiple>
 </section>
 
 <!-- 按实验室/场地核查：分组列表 -->
@@ -469,7 +411,7 @@ const H=DATA.headers;
 const I={};H.forEach((h,i)=>I[h]=i);
 /* 原表表头与数据列整体错开一列：序号值在第 1 列(A)，表头却标在第 2 列(B)。 */
 if(H[0]==='' && H[1]==='序号') I['序号']=0;
-const VER='v2.30 · 2026-11-21';
+const VER='v2.31 · 2026-11-21';
 const DATA_DATE='2026-11-19';
 const FOOT=document.getElementById('foot');if(FOOT)FOOT.textContent='沙河教务 · '+VER;
 document.querySelectorAll('.ver').forEach(el=>{el.textContent=el.classList.contains('count')?VER+' · 共 '+ROWS.length+' 台':VER});
@@ -726,7 +668,7 @@ async function exportXlsx(){
 }
 async function exportNow(){
   const n=Object.keys(notes).length;
-  if(!n&&!confirm('现在一条备注都没有，导出的表和原表一样。先去「其他不确定可备注 → 按编号标记」把编号贴上、点「标记「无盘亏」」，再来下载。仍要下载吗？')){
+  if(!n&&!confirm('现在一条备注都没有，导出的表和原表一样。先去核查页给设备点「未盘亏」或填后备注，再来下载。仍要下载吗？')){
     return false;
   }
   try{
@@ -1235,88 +1177,13 @@ function backLab(){
   renderLabs($('#labq').value);show('#slab');
 }
 
-/* ---------------- 盘点：按铭牌编号标「无盘亏」 ---------------- */
-function normCode(v){
-  return String(v==null?'':v).replace(/（/g,'(').replace(/）/g,')')
-    .replace(/\s+/g,'').replace(/[－—–]/g,'-').toUpperCase();
-}
-function codeVariants(t){
-  const n=normCode(t);
-  const out=[];
-  const push=v=>{if(v&&out.indexOf(v)<0)out.push(v)};
-  push(n);
-  push(n.replace(/\(/g,'-').replace(/\)/g,'').replace(/-+/g,'-'));
-  push(n.replace(/[^0-9A-Z]/g,''));
-  return out;
-}
-const CODEIDX={};
-ROWS.forEach((r,i)=>{
-  const add=(k)=>{if(!k)return;const a=CODEIDX[k]=CODEIDX[k]||[];if(a.indexOf(i)<0)a.push(i)};
-  const c=get(r,'初始编号');
-  if(c){const n=normCode(c);add(n);add(n.replace(/\(/g,'-').replace(/\)/g,'').replace(/-+/g,'-'));add(n.replace(/[^0-9A-Z]/g,''))}
-  const a=get(r,'资产编号');
-  if(a){const n=normCode(a);add(n);add(n.replace(/[^0-9A-Z]/g,''))}
-});
-function lookupCode(t){
-  for(const v of codeVariants(t)){
-    if(CODEIDX[v])return CODEIDX[v];
-  }
-  return [];
-}
-function hasMark(r,i){
-  return String(noteOf(r,i)).split('\n').some(l=>l.trim()===MARK);
-}
-function addMark(r,i){
-  if(hasMark(r,i))return false;
-  const cur=String(noteOf(r,i)||'').split('\n').map(l=>l.trim()).filter(Boolean);
-  cur.push(MARK);
-  setNote(r,i,cur.join('\n'));
-  return true;
-}
-function runStock(){
-  const raw=$('#stockIn').value||'';
-  const toks=raw.split(/[\n,，、;；\t ]+/).map(t=>t.trim()).filter(Boolean);
-  if(!toks.length){$('#stockOut').innerHTML='<span class="miss">先贴编号</span>';return}
-  let marked=0,done=0,miss=[],multi=[],hit=[];
-  toks.forEach(t=>{
-    const idxs=lookupCode(t);
-    if(!idxs.length){miss.push(t);return}
-    idxs.forEach(i=>{
-      const r=ROWS[i];
-      hit.push(esc(get(r,'初始编号'))+' · '+esc(get(r,'资产名称')));
-      if(addMark(r,i))marked++;else done++;
-    });
-    if(idxs.length>1)multi.push(t);
-  });
-  localStorage.setItem(KEY,JSON.stringify(notes));
-  const allDup=[...new Set(hit)].length!==hit.length;
-  let html='<b>已标记 '+marked+' 台</b>';
-  if(done)html+='，之前已标 '+done+' 台（跳过）';
-  if(multi.length)html+='，同编号多台：'+multi.map(esc).join('、');
-  if(miss.length)html+='<br><span class="miss">没对上 '+miss.length+' 条：'+miss.map(esc).join('、')+'</span>';
-  if(hit.length)html+='<br><br>对上的是：<br>'+hit.map(h=>'· '+h).join('<br>');
-  html+='<br><br>合计已标「'+MARK+'」'+ROWS.reduce((a,r,i)=>a+(hasMark(r,i)?1:0),0)+' 台（表内 + 本机）；导出时写在最后一列。';
-  $('#stockOut').innerHTML=html;
-}
-/* ---------------- 不在账设备或其他备注：照片记录（IndexedDB） ---------------- */
-const PH_DB='eq26.photos', PH_STORE='recs', PH_CATKEY='eq26.photo.cat.v1';
-const PH_CATS=['不在账设备','其他备注','待处理','报修'];
-const PH_CUSTOM='__custom';
+/* ---------------- 其他不确定可备注：备注说明（localStorage）+ 照片记录（IndexedDB） ---------------- */
+const PH_DB='eq26.photos', PH_STORE='recs';
+const PHP_DRAFT='eq26.photo.draft.v1', PHP_HIST='eq26.photo.hist.v1';
 let phDBP=null, phURLs=[], phMem=[], phMemMode=false;
-function phWarn(msg){
-  const el=$('#phMemWarn');if(el){el.hidden=!msg;if(msg)el.innerHTML=msg}
-}
-function phUseMem(reason){
-  if(phMemMode)return;
-  phMemMode=true;
-  console.warn('照片存储降到内存模式：',reason);
-  phWarn('这个打开方式浏览器不让存照片，只能临时留在本页；请用线上网址打开再拍。关掉页面就没了，记得先导出。');
-}
-function phShowErr(msg){
-  const el=$('#phErr');if(!el)return;
-  el.innerHTML=String(msg||'');
-  el.hidden=!msg;
-}
+const phSession=new Set();          /* 本次打开页面后新加的照片 id，用于「单独导出」 */
+let phSessionStart=Date.now();
+
 function phOpenDB(){
   if(phDBP)return phDBP;
   phDBP=new Promise((res,rej)=>{
@@ -1329,6 +1196,9 @@ function phOpenDB(){
   return phDBP;
 }
 function phStore(mode){return phOpenDB().then(db=>db.transaction(PH_STORE,mode).objectStore(PH_STORE))}
+function phUseMem(reason){
+  if(!phMemMode){phMemMode=true;console.warn('照片存储降到内存：',reason)}
+}
 async function phAll(){
   if(phMemMode)return phMem.slice();
   try{
@@ -1354,21 +1224,29 @@ const phId=()=>Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6)
 const phP2=n=>String(n).padStart(2,'0');
 const phTime=t=>{const d=new Date(t);return phP2(d.getMonth()+1)+'-'+phP2(d.getDate())+' '+phP2(d.getHours())+':'+phP2(d.getMinutes())};
 const phStamp=t=>{const d=new Date(t);return d.getFullYear()+phP2(d.getMonth()+1)+phP2(d.getDate())+'-'+phP2(d.getHours())+phP2(d.getMinutes())};
-function phCatNow(){
-  const v=$('#phCat').value;
-  if(v===PH_CUSTOM)return ($('#phCatCustom').value||'').trim()||'自定';
-  return v;
+
+/* ---- 文字：本机草稿 + 历次「添加更新」的存档 ---- */
+function phTxtLoad(){try{$('#phTxt').value=localStorage.getItem(PHP_DRAFT)||''}catch(e){}}
+function phTxtDraft(){try{localStorage.setItem(PHP_DRAFT,$('#phTxt').value)}catch(e){}}
+function phHist(){try{return JSON.parse(localStorage.getItem(PHP_HIST)||'[]')||[]}catch(e){return []}}
+function phHistSave(a){try{localStorage.setItem(PHP_HIST,JSON.stringify(a))}catch(e){}}
+function phTxtExport(mode){
+  const cur=($('#phTxt').value||'').trim();
+  let entries;
+  if(mode==='add'){
+    const h=phHist();
+    if(cur)h.push({t:Date.now(),text:cur});
+    phHistSave(h);entries=h.slice();
+    if(!entries.length){alert('还没有内容，先写点东西再导出');return}
+  }else{
+    if(!cur){alert('还没有内容，先写点东西再导出');return}
+    entries=[{t:Date.now(),text:cur}];
+  }
+  const body=entries.map(e=>'【'+new Date(e.t).toLocaleString('zh-CN')+'】\n'+e.text).join('\n\n------------------------------\n\n');
+  download(new Blob(['\ufeff'+body],{type:'text/plain;charset=utf-8'}),'备注说明-'+phStamp(Date.now())+'.txt');
 }
-function phSavePref(){
-  try{localStorage.setItem(PH_CATKEY,JSON.stringify({v:$('#phCat').value,c:$('#phCatCustom').value||''}))}catch(e){}
-}
-function phLoadPref(){
-  let p={};
-  try{p=JSON.parse(localStorage.getItem(PH_CATKEY)||'{}')||{}}catch(e){}
-  if(p.v&&[...$('#phCat').options].some(o=>o.value===p.v))$('#phCat').value=p.v;
-  $('#phCatCustom').value=p.c||'';
-  $('#phCatCustom').hidden=$('#phCat').value!==PH_CUSTOM;
-}
+
+/* ---- 照片 ---- */
 function phPickImg(file){
   return new Promise((res,rej)=>{
     const u=URL.createObjectURL(file),img=new Image();
@@ -1377,7 +1255,6 @@ function phPickImg(file){
     img.src=u;
   });
 }
-/* 压到最长边 1600、JPEG 0.82：省空间，也省导出体积 */
 async function phCompress(file){
   const img=await phPickImg(file);
   const max=1600;
@@ -1385,86 +1262,70 @@ async function phCompress(file){
   const k=Math.min(1,max/Math.max(iw,ih));
   const w=Math.max(1,Math.round(iw*k)),h=Math.max(1,Math.round(ih*k));
   const cv=document.createElement('canvas');cv.width=w;cv.height=h;
-  const cx=cv.getContext('2d');cx.drawImage(img,0,0,w,h);
+  cv.getContext('2d').drawImage(img,0,0,w,h);
   const blob=await new Promise(r=>cv.toBlob(r,'image/jpeg',0.82));
   return blob||file;
 }
 async function phAddFiles(list){
   try{
-    const arr=[...list].filter(f=>f&&(f.type?/^image\//.test(f.type):true));
-    if(!arr.length){phShowErr('没拿到图片：选中的文件不是图片，或相册返回为空。');return}
-    if(!window.indexedDB&&!phMemMode)phUseMem('no indexedDB');
-    const note=($('#phNote').value||'').trim();
-    const cat=phCatNow();
-    let n=0,base=Date.now(),fail=0,lastErr='';
+    const arr=[...list].filter(f=>f&&f.type&&/^image\//.test(f.type));
+    if(!arr.length){alert('没拿到图片，重试一次或改用相册');return}
+    if(!window.indexedDB)phUseMem('no indexedDB');
+    const note=($('#phTxt').value||'').trim();
+    let n=0,base=Date.now(),lastErr='';
     for(const f of arr){
       let blob=f;
       try{blob=await phCompress(f)}catch(e){lastErr=e&&e.message||String(e)}
-      try{
-        await phPut({id:phId()+'-'+n,cat,note,time:base+n*1000,img:blob});
-        n++;
-      }catch(e){fail++;lastErr=e&&e.message||String(e)}
+      const rec={id:phId()+'-'+n,note,time:base+n*1000,img:blob};
+      try{await phPut(rec);phSession.add(rec.id);n++}
+      catch(e){lastErr=e&&e.message||String(e)}
     }
-    $('#phNote').value='';
-    $('#phPasteHint').hidden=true;
     await phRender();
-    if(!n){phShowErr('没能存下这张照片：'+(lastErr||'原因不明')+'。再试一次，或换用「相册」入口。');return}
-    phShowErr('');
-    const lb=$('#phCam');
-    const old=lb.textContent;
+    if(!n){alert('没能存下这张照片：'+(lastErr||'原因不明'));return}
+    const lb=$('#phAdd'),old=lb.textContent;
     lb.textContent='已存 '+n+' 张';
     setTimeout(()=>{lb.textContent=old},1200);
-  }catch(e){
-    phShowErr('加照片出错：'+(e&&e.message||e));
-  }
+  }catch(e){alert('加照片出错：'+(e&&e.message||e))}
 }
+let phRenderSeq=0;
 async function phRender(){
+  const seq=++phRenderSeq;
   const recs=(await phAll()).sort((a,b)=>b.time-a.time);
-  const pics=recs.filter(r=>r.img).length;
-  $('#phCount').textContent='共 '+recs.length+' 条 · '+pics+' 张照片';
-  phURLs.forEach(u=>{try{URL.revokeObjectURL(u)}catch(e){}});phURLs=[];
-  if(!recs.length){$('#phList').innerHTML='<div class="empty">还没有照片，点拍照或粘贴</div>';return}
-  $('#phList').innerHTML=recs.map(r=>{
+  if(seq!==phRenderSeq)return;          /* 有更新的渲染在跑，这次丢弃，免得两头像互相撤 URL */
+  const old=phURLs;phURLs=[];
+  if(!recs.length){
+    $('#phList').innerHTML='<div class="empty">还没有照片，点「拍照/相册」加一张</div>';
+    old.forEach(u=>{try{URL.revokeObjectURL(u)}catch(e){}});
+    return;
+  }
+  const html=recs.map(r=>{
     const u=URL.createObjectURL(r.img);phURLs.push(u);
-    const note=(r.note||'（无备注）').slice(0,26);
     return '<div class="phitem" data-id="'+esc(r.id)+'">'
       +'<img class="phthumb" src="'+u+'" alt="">'
-      +'<div class="phmeta"><span class="tag">'+esc(r.cat||'未分类')+'</span> '
-      +'<span class="phtime">'+phTime(r.time)+'</span>'
-      +'<div class="phnote">'+esc(note)+'</div></div></div>';
+      +'<div class="phmeta"><span class="phtime">'+phTime(r.time)+'</span>'
+      +'<div class="phnote">'+esc((r.note||'（无备注说明）').slice(0,30))+'</div></div></div>';
   }).join('');
+  $('#phList').innerHTML=html;
   $('#phList').querySelectorAll('.phitem').forEach(el=>el.onclick=()=>phDetail(el.dataset.id));
+  /* 先换上新图再撤销旧 URL，避免正显示的那张被打断 */
+  old.forEach(u=>{try{URL.revokeObjectURL(u)}catch(e){}});
 }
 async function phDetail(id){
   const recs=await phAll();const r=recs.find(x=>x.id===id);if(!r)return;
-  const known=PH_CATS.indexOf(r.cat)>=0;
   const u=URL.createObjectURL(r.img);
   const m=document.createElement('div');m.className='phmodal';m.id='phModal';
   m.innerHTML='<img src="'+u+'" alt="">'
-    +'<div class="phmrow"><select id="phmCat">'
-    +PH_CATS.map(c=>'<option'+(c===r.cat?' selected':'')+'>'+esc(c)+'</option>').join('')
-    +'<option value="__c"'+(known?'':' selected')+'>自定…</option></select>'
-    +'<input id="phmCustom" placeholder="自定分类" value="'+(known?'':esc(r.cat||''))+'"'+(known?' hidden':'')+'>'
-    +'</div>'
-    +'<textarea id="phmNote" placeholder="备注">'+esc(r.note||'')+'</textarea>'
-    +'<div class="phmacts">'
-    +'<button class="btn" id="phmSave">保存</button>'
-    +'<button class="btn" id="phmDel">删除</button>'
-    +'<button class="btn" id="phmClose">关闭</button>'
-    +'</div>';
+    +'<textarea id="phmNote" placeholder="备注说明（可改）">'+esc(r.note||'')+'</textarea>'
+    +'<div class="phmacts"><button class="btn" id="phmSave">保存</button>'
+    +'<button class="btn" id="phmDel">删除这张</button>'
+    +'<button class="btn cancel" id="phmClose">关闭</button></div>';
   document.body.appendChild(m);
   const close=()=>{try{URL.revokeObjectURL(u)}catch(e){};m.remove();phRender()};
-  $('#phmCat').onchange=()=>{$('#phmCustom').hidden=$('#phmCat').value!=='__c';};
   $('#phmClose').onclick=close;
-  $('#phmSave').onclick=async()=>{
-    const v=$('#phmCat').value;
-    r.cat=v==='__c'?(($('#phmCustom').value||'').trim()||'自定'):v;
-    r.note=($('#phmNote').value||'').trim();
-    await phPut(r);close();
-  };
+  $('#phmSave').onclick=async()=>{r.note=($('#phmNote').value||'').trim();await phPut(r);close()};
   $('#phmDel').onclick=async()=>{
-    if(!confirm('删掉这条记录？照片也会一起删掉。'))return;
-    await phDelete(r.id);close();
+    if(!confirm('删掉这张照片？只删本机这张，已导出的不受影响。'))return;
+    await phDelete(r.id);phSession.delete(r.id);close();
   };
 }
 function phDos(ms){
@@ -1473,151 +1334,55 @@ function phDos(ms){
   const date=((((d.getFullYear()-1980)&127)<<9)|(((d.getMonth()+1)&15)<<5)|(d.getDate()&31))&0xFFFF;
   return {time,date};
 }
-const phSafe=s=>String(s||'未分类').replace(/[\\/:*?"<>|\s]+/g,'').slice(0,12)||'未分类';
+const phSafe=s=>String(s||'').replace(/[\\/:*?"<>|\s]+/g,'').slice(0,20);
 const phCsv=v=>{const t=String(v==null?'':v);return /[",\r\n]/.test(t)?'"'+t.replace(/"/g,'""')+'"':t};
-async function phExport(onlyCat){
+async function phExportZip(mode){
   const all=(await phAll()).sort((a,b)=>b.time-a.time);
-  const recs=onlyCat?all.filter(r=>r.cat===onlyCat):all;
-  if(!recs.length){alert(onlyCat?('「'+onlyCat+'」还没有记录'):'还没有照片，先拍一张再导出');return}
-  const ents=[],rows=[['分类','备注','文件名','时间']];
+  const recs=(mode==='session')?all.filter(r=>phSession.has(r.id)):all;
+  if(!recs.length){alert(mode==='session'?'这次还没有新加的照片':'还没有照片，先拍一张再导出');return}
+  const ents=[],rows=[['备注','文件名','时间']];
   for(let k=0;k<recs.length;k++){
     const r=recs[k];
-    const nm='photos/'+String(k+1).padStart(3,'0')+'_'+phSafe(r.cat)+'_'+phStamp(r.time)+'.jpg';
+    const nm='photos/'+String(k+1).padStart(3,'0')+'_'+phStamp(r.time)+'.jpg';
     const buf=new Uint8Array(await r.img.arrayBuffer());
     const dt=phDos(r.time);
     ents.push({name:nm,method:0,time:dt.time,date:dt.date,data:buf,crc:crc32(buf),csize:buf.length,usize:buf.length});
-    rows.push([r.cat||'',r.note||'',nm,new Date(r.time).toLocaleString('zh-CN')]);
+    rows.push([r.note||'',nm,new Date(r.time).toLocaleString('zh-CN')]);
   }
   const csv='\ufeff'+rows.map(r=>r.map(phCsv).join(',')).join('\r\n');
   const cb=new TextEncoder().encode(csv);
   const dd=phDos(Date.now());
   ents.push({name:'备注.csv',method:0,time:dd.time,date:dd.date,data:cb,crc:crc32(cb),csize:cb.length,usize:cb.length});
   const raw=await zipBuild(ents).arrayBuffer();
-  const d=new Date();
-  download(new Blob([raw],{type:'application/zip'}),
-    '账外记录-'+d.getFullYear()+phP2(d.getMonth()+1)+phP2(d.getDate())+'-'+phP2(d.getHours())+phP2(d.getMinutes())+'.zip');
+  download(new Blob([raw],{type:'application/zip'}),'账外记录-'+phStamp(Date.now())+'.zip');
 }
-function phTab(name){
-  document.querySelectorAll('#sphoto .tab').forEach(b=>b.classList.toggle('on',b.dataset.tab===name));
-  $('#tabPhotos').classList.toggle('on',name==='photos');
-  $('#tabCodes').classList.toggle('on',name==='codes');
-  if(name==='photos')phRender();
+async function phClearPics(){
+  const recs=await phAll();
+  if(!recs.length){alert('现在没有照片');return}
+  if(!confirm('清屏会把 '+recs.length+' 张照片一起删掉，已导出的不受影响。确定清掉吗？'))return;
+  for(const r of recs)await phDelete(r.id);
+  phSession.clear();
+  await phRender();
 }
-function openPhoto(tab){
-  phLoadPref();
-  phTab(tab||'photos');
+/* ---- 二次选择：底部弹出（拍照/相册用 <label for> 原生唤起，iOS 才弹得出来） ---- */
+function phMenu(title,items){
+  const m=document.createElement('div');m.className='phmodal';m.id='phMenu';
+  m.innerHTML='<div class="phsheet"><div class="phshtitle">'+esc(title)+'</div>'
+    +items.map((it,i)=>it.for
+      ?'<label class="btn" for="'+it.for+'" data-i="'+i+'">'+esc(it.label)+'</label>'
+      :'<button class="btn" data-i="'+i+'">'+esc(it.label)+'</button>').join('')
+    +'<button class="btn cancel" data-i="-1">取消</button></div>';
+  document.body.appendChild(m);
+  m.querySelectorAll('[data-i]').forEach(el=>{
+    el.onclick=()=>{const i=+el.dataset.i;m.remove();setTimeout(()=>{if(i>=0&&items[i]&&items[i].act)items[i].act()},10)};
+  });
+  m.onclick=e=>{if(e.target===m)m.remove()};
+}
+function openPhoto(){
+  phTxtLoad();
+  phRender();
   show('#sphoto');
 }
-function openStock(){
-  $('#stockIn').value='';
-  $('#stockOut').innerHTML='还没标记。';
-  openPhoto('codes');
-}
-
-/* ---------------- 拍照识别编号（tesseract.js，按需加载） ---------------- */
-const TESS_URL='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
-let tessLoading=null, workerP=null;
-function loadTesseract(){
-  if(window.Tesseract)return Promise.resolve();
-  if(tessLoading)return tessLoading;
-  tessLoading=new Promise((res,rej)=>{
-    const sc=document.createElement('script');
-    sc.src=TESS_URL;
-    sc.onload=()=>res();
-    sc.onerror=()=>{tessLoading=null;rej(new Error('识别库加载失败（可能要联网）'))};
-    document.head.appendChild(sc);
-  });
-  return tessLoading;
-}
-function getWorker(){
-  if(workerP)return workerP;
-  workerP=(async()=>{
-    await loadTesseract();
-    const w=await Tesseract.createWorker('eng');
-    await w.setParameters({tessedit_char_whitelist:'0123456789-()（） '});
-    return w;
-  })();
-  workerP.catch(()=>{workerP=null});
-  return workerP;
-}
-function candidatesFromText(t){
-  const s=String(t||'').replace(/[ \t]+/g,'');
-  const out=[];
-  const re=/(\d{3,6})[-—－]?[（(]?(\d{1,3})[）)]?/g;
-  let m;
-  while((m=re.exec(s))){out.push(m[1]+'-'+m[2])}
-  const re2=/\d{6,12}/g;
-  while((m=re2.exec(s))){out.push(m[0])}
-  return out;
-}
-function matchFromText(t){
-  const hits={};
-  candidatesFromText(t).forEach(c=>{
-    lookupCode(c).forEach(i=>{hits[i]=(hits[i]||0)+1});
-  });
-  return Object.keys(hits).map(Number);
-}
-let lastScan=null;
-function markedCount(){return ROWS.reduce((a,r,i)=>a+(hasMark(r,i)?1:0),0)}
-function undoScan(){
-  if(!lastScan)return;
-  const i=lastScan.i,r=ROWS[i],prev=lastScan.prev||'';
-  if(prev)setNote(r,i,prev);else delete notes[rkey(r,i)];
-  localStorage.setItem(KEY,JSON.stringify(notes));
-  $('#stockOut').innerHTML='已撤销：'+esc(get(r,'初始编号'))+' · '+esc(get(r,'资产名称'))
-    +' 的「'+MARK+'」已撤掉，可以重拍。<br><span class="small">已标 '+markedCount()+' 台（表内 + 本机）</span>';
-  lastScan=null;
-}
-async function scanFile(file){
-  const w=await getWorker();
-  const url=URL.createObjectURL(file);
-  try{
-    const r=await w.recognize(url);
-    return (r&&r.data&&r.data.text)||'';
-  }finally{URL.revokeObjectURL(url)}
-}
-async function onPickPhoto(file){
-  if(!file)return;
-  const out=$('#stockOut');
-  out.innerHTML='识别中…（第一次会下载约 2MB 识别库，请稍等）';
-  let text='';
-  try{
-    text=await scanFile(file);
-  }catch(err){
-    out.innerHTML='<span class="miss">识别失败：'+esc((err&&err.message)||err)+'</span><br>可以点「拍照识别编号」重拍，或把编号贴到上面的框里手动标。';
-    return;
-  }
-  const idxs=matchFromText(text);
-  if(idxs.length===1){
-    const i=idxs[0],r=ROWS[i];
-    const changed=addMark(r,i);
-    localStorage.setItem(KEY,JSON.stringify(notes));
-    if(!changed){
-      lastScan=null;
-      out.innerHTML='<b>'+esc(get(r,'初始编号'))+' · '+esc(get(r,'资产名称'))+'</b><br>'
-        +'这台之前已标过「'+MARK+'」，不用重复标记。'
-        +'<br><span class="small">已标 '+markedCount()+' 台（表内 + 本机）</span>';
-      return;
-    }
-    lastScan={i:i,prev:noteOf(r,i).split('\n').filter(l=>l.trim()!==MARK).join('\n').trim()};
-    out.innerHTML='<b>此台已录入 ✓</b><br>'+esc(get(r,'初始编号'))+' · '+esc(get(r,'资产名称'))
-      +'<br><span class="small">序号 '+esc(get(r,'序号'))+' · 现存放 '+esc(get(r,'现存放位置20260123'))+' · 已标 '+markedCount()+' 台（表内 + 本机）</span>'
-      +'<br><button class="btn ghost" id="scanUndo" style="margin-top:8px;height:48px;font-size:16px">不是这台？撤销</button>';
-    const b=$('#scanUndo');
-    if(b)b.onclick=undoScan;
-    return;
-  }
-  if(idxs.length>1){
-    out.innerHTML='<span class="miss">认到了 '+idxs.length+' 台，不敢替你定：</span><br>'
-      +idxs.map(i=>'· '+esc(get(ROWS[i],'初始编号'))+' · '+esc(get(ROWS[i],'资产名称'))).join('<br>')
-      +'<br>把要的那台编号贴到上面框里，点「标记「无盘亏」」。';
-    return;
-  }
-  out.innerHTML='<span class="miss">没认出编号</span><br>识别到的内容：<br>'
-    +'<span class="small">'+esc(text.replace(/\s+/g,' ').slice(0,120))+'</span><br>'
-    +'重拍一张（正对标签、拍清编号那行），或用上面的大框手动贴。';
-}
-
 /* 事件 */
 $('#go').onclick=search;
 $('#code').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();search()}});
@@ -1671,44 +1436,40 @@ $('#ckDetail').addEventListener('input',e=>{
   ckDirty=true;autoSave();
 });
 $('#labBtn').onclick=openLab;
-$('#stockBtn').onclick=()=>openPhoto('photos');
+$('#stockBtn').onclick=openPhoto;
 $('#backPhoto').onclick=()=>{show('#s1');setTimeout(()=>$('#code').focus(),80)};
-document.querySelectorAll('#sphoto .tab').forEach(b=>b.onclick=()=>phTab(b.dataset.tab));
-$('#phCat').onchange=()=>{$('#phCatCustom').hidden=$('#phCat').value!==PH_CUSTOM;phSavePref()};
-$('#phCatCustom').oninput=phSavePref;
-/* 拍照 / 相册 用 <label for> 直接唤起选择器，不再用脚本 .click()——iOS 上脚本点击隐藏的文件框常常不弹 */
+
+/* 备注说明 */
+$('#phTxtFocus').onclick=()=>{const t=$('#phTxt');t.focus();t.setSelectionRange(t.value.length,t.value.length)};
+$('#phTxtClear').onclick=()=>{$('#phTxt').value='';phTxtDraft();$('#phTxt').focus()};
+$('#phTxt').addEventListener('input',phTxtDraft);
+$('#phTxtSave').onclick=()=>phMenu('文字导出',[
+  {label:'添加更新（含以前保存的）',act:()=>phTxtExport('add')},
+  {label:'单独导出（只导本次）',act:()=>phTxtExport('only')}
+]);
+
+/* 照片 */
+$('#phAdd').onclick=()=>phMenu('加照片',[
+  {label:'拍照',for:'phCamIn'},
+  {label:'从相册选',for:'phPickIn'}
+]);
+$('#phPicSave').onclick=()=>phMenu('照片导出',[
+  {label:'添加更新（本机全部照片）',act:()=>phExportZip('all')},
+  {label:'单独导出（只导本次新加的）',act:()=>phExportZip('session')}
+]);
+$('#phPicClear').onclick=phClearPics;
+
 /* 先把选中的文件复制成普通数组，再清空 input —— 直接读 e.target.files 再清空，Safari 里这个列表会跟着变空 */
 function phOnPick(e){
   const box=e.target;
   const files=box.files?[...box.files]:[];
   box.value='';
   if(files.length)phAddFiles(files);
-  else phShowErr('没选到照片（选择器返回空）。再点一次，或改用粘贴。');
+  else alert('没选到照片（选择器返回空），再点一次。');
 }
 $('#phCamIn').addEventListener('change',phOnPick);
 $('#phPickIn').addEventListener('change',phOnPick);
-$('#phPaste').onclick=()=>{
-  const ta=$('#phNote');ta.focus();
-  const h=$('#phPasteHint');h.hidden=false;
-  setTimeout(()=>{h.hidden=true},6000);
-};
-document.addEventListener('paste',e=>{
-  if(!$('#tabPhotos').classList.contains('on'))return;
-  const items=(e.clipboardData&&e.clipboardData.items)||[];
-  const files=[];
-  for(const it of items){if(it.kind==='file'&&/^image\//.test(it.type)){const f=it.getAsFile();if(f)files.push(f)}}
-  if(files.length){e.preventDefault();phAddFiles(files)}
-});
-$('#phExpAll').onclick=()=>phExport('');
-$('#phExpCat').onclick=()=>phExport(phCatNow());
-$('#stockGo').onclick=runStock;
-$('#stockDl').onclick=async()=>{if(await exportNow())flash('#stockDl','已下载')};
-$('#snapBtn').onclick=()=>$('#camIn').click();
-$('#camIn').addEventListener('change',e=>{
-  const f=e.target.files&&e.target.files[0];
-  e.target.value='';
-  if(f)onPickPhoto(f);
-});
+
 $('#backLab').onclick=()=>{show('#s1');setTimeout(()=>$('#code').focus(),80)};
 $('#labq').addEventListener('input',e=>renderLabs(e.target.value));
 $('#backCk').onclick=backLab;
