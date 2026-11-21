@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
-<title>设备位置核查及转移操作系统</title>
+<title>设备核查转移操作系统</title>
 <style>
 :root{
   --accent:#0b62d6;--accent-d:#0a52b5;--ink:#0d1117;--ink2:#4a5460;--line:#d8dee6;
@@ -37,8 +37,9 @@ body{display:flex;flex-direction:column;min-height:100%;
 .actions-row .btn{height:calc(var(--btn-h) - 6px);font-size:clamp(14px,4.3vw,17px);padding:0 2px}
 
 /* ---------- 查询页 ---------- */
-#s1{justify-content:center}
-.h1{font-size:clamp(23px,7vw,30px);font-weight:800;letter-spacing:3px;margin:0;
+#s1{justify-content:flex-start;padding-top:10px}
+#s1 .foot{margin-top:auto}
+.h1{font-size:clamp(24px,8.4vw,30px);font-weight:800;letter-spacing:1px;margin:0;line-height:1.3;
   text-align:center;color:#0b2545;white-space:nowrap}
 .hint{font-size:clamp(15px,4.4vw,18px);color:var(--ink2);margin:0;text-align:center}
 input[type=text]{display:block;width:calc(100% - 22px);margin:0 auto;height:clamp(50px,8.2vh,60px);
@@ -246,7 +247,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
 
 <!-- 查询 -->
 <section class="screen on" id="s1">
-  <h1 class="h1" id="h1">设备位置核查及转移操作系统</h1>
+  <h1 class="h1" id="h1">设备核查转移操作系统</h1>
   <input type="text" id="code" inputmode="text" autocomplete="off" autocorrect="off"
          autocapitalize="characters" spellcheck="false" placeholder="初始编号">
   <div class="err" id="err"></div>
@@ -411,7 +412,7 @@ const H=DATA.headers;
 const I={};H.forEach((h,i)=>I[h]=i);
 /* 原表表头与数据列整体错开一列：序号值在第 1 列(A)，表头却标在第 2 列(B)。 */
 if(H[0]==='' && H[1]==='序号') I['序号']=0;
-const VER='v2.31 · 2026-11-21';
+const VER='v2.32 · 2026-11-21';
 const DATA_DATE='2026-11-19';
 const FOOT=document.getElementById('foot');if(FOOT)FOOT.textContent='沙河教务 · '+VER;
 document.querySelectorAll('.ver').forEach(el=>{el.textContent=el.classList.contains('count')?VER+' · 共 '+ROWS.length+' 台':VER});
@@ -1374,7 +1375,17 @@ function phMenu(title,items){
     +'<button class="btn cancel" data-i="-1">取消</button></div>';
   document.body.appendChild(m);
   m.querySelectorAll('[data-i]').forEach(el=>{
-    el.onclick=()=>{const i=+el.dataset.i;m.remove();setTimeout(()=>{if(i>=0&&items[i]&&items[i].act)items[i].act()},10)};
+    el.onclick=()=>{
+      const i=+el.dataset.i;
+      /* label 要点：先删掉面板，label 已不在文档里，浏览器就不再跑它的默认动作（唤起 input[type=file]），
+         表现就是点了没反应。所以 label 必须让默认动作先走，再异步收面板。 */
+      if(el.tagName==='LABEL'){
+        setTimeout(()=>{if(document.body.contains(m))m.remove()},0);
+        return;
+      }
+      m.remove();
+      setTimeout(()=>{if(i>=0&&items[i]&&items[i].act)items[i].act()},10);
+    };
   });
   m.onclick=e=>{if(e.target===m)m.remove()};
 }
@@ -1464,6 +1475,7 @@ function phOnPick(e){
   const box=e.target;
   const files=box.files?[...box.files]:[];
   box.value='';
+  const mm=document.getElementById('phMenu');if(mm)mm.remove(); /* 双保险：残留面板一起收掉 */
   if(files.length)phAddFiles(files);
   else alert('没选到照片（选择器返回空），再点一次。');
 }
