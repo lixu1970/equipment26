@@ -168,6 +168,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
 .dtbar span{font-size:14px;font-weight:700;color:var(--ink2)}
 .dtbar .btn{height:36px;font-size:15px;padding:0 14px;box-shadow:none}
 .actions-row.three{grid-template-columns:repeat(3,1fr)}
+.actions-row.two{grid-template-columns:1fr 1fr}
 
 /* ---------- 其他不确定可备注：备注说明 + 照片记录 ---------- */
 .phgrid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;flex:0 0 auto}
@@ -423,7 +424,7 @@ const H=DATA.headers;
 const I={};H.forEach((h,i)=>I[h]=i);
 /* 原表表头与数据列整体错开一列：序号值在第 1 列(A)，表头却标在第 2 列(B)。 */
 if(H[0]==='' && H[1]==='序号') I['序号']=0;
-const VER='v2.35 · 2026-11-21';
+const VER='v2.36 · 2026-11-21';
 const DATA_DATE='2026-11-19';
 const FOOT=document.getElementById('foot');if(FOOT)FOOT.textContent='沙河教务 · '+VER;
 document.querySelectorAll('.ver').forEach(el=>{el.textContent=el.classList.contains('count')?VER+' · 共 '+ROWS.length+' 台':VER});
@@ -770,6 +771,7 @@ function openProfDev(prof,loc){
       +'</div>';
   }).join('');
   $('#devHint').hidden=true;
+  setDevActs(false);
   show('#sdev');
 }
 
@@ -790,6 +792,12 @@ function detailNoteHTML(id,val){
    +'</dd><p class="dtnhint">点框即可输入，写完点「保存」</p></div>';
 }
 let devMode='list',devIdx=-1,devScroll=0;
+/* 列表态底部只有「保存 / 更新下载」两键（左上 ‹ 就是返回）；明细态才把「返回」放回来 */
+function setDevActs(detail){
+  const b=$('#backAll');if(b)b.hidden=!detail;
+  const row=document.querySelector('#sdev .actions-row');
+  if(row){row.classList.toggle('two',!detail);row.classList.toggle('three',!!detail)}
+}
 function openDevDetail(i){
   if(i==null||i<0)return;
   devIdx=i;devMode='detail';
@@ -801,6 +809,7 @@ function openDevDetail(i){
     +'<div class="grid">'+detailFields(i)+detailNoteHTML('devDNote',noteOf(ROWS[i],i))+'</div>';
   pane.hidden=false;pane.scrollTop=0;
   $('#devTitle').textContent=get(ROWS[i],'资产名称')||('序号 '+get(ROWS[i],'序号'));
+  setDevActs(true);
   dirty=false;
 }
 function collapseDev(){
@@ -822,6 +831,7 @@ function collapseDev(){
     const box=b.closest('.devrow');
     if(box&&box.dataset.row!=null)paintTrio(b,+box.dataset.row);
   });
+  setDevActs(false);
   dirty=false;
 }
 function saveAll(){
@@ -1013,6 +1023,12 @@ function setBar(){
   $('#pgFill').style.width=(gIdx.length?done*100/gIdx.length:0)+'%';
   $('#pgTxt').textContent=done+'/'+gIdx.length+' 已查';
 }
+/* 同设备列表页：列表态两键（左上 ‹ 返回），明细态三键 */
+function setCkActs(detail){
+  const b=$('#backCk2');if(b)b.hidden=!detail;
+  const row=document.querySelector('#sck .actions-row');
+  if(row){row.classList.toggle('two',!detail);row.classList.toggle('three',!!detail)}
+}
 function renderCk(){
   if(!gIdx.length)return;
   $('#ckTitle').innerHTML=esc(gLoc)+(LABRE.test(gLoc)?' <span class="tag">实训室</span>':'')+(gProf?' · '+esc(gProf):'');
@@ -1027,6 +1043,7 @@ function renderCk(){
       +'</div>';
   }).join('');
   paintCkList();
+  setCkActs(false);
 }
 function paintCkList(){
   $('#ckList').querySelectorAll('.trio').forEach(b=>{
@@ -1045,6 +1062,7 @@ function openCkDetail(i){
     +'<div class="grid">'+detailFields(i)+detailNoteHTML('ckDNote',noteOf(ROWS[i],i))+'</div>';
   pane.hidden=false;pane.scrollTop=0;
   $('#ckList').hidden=true;
+  setCkActs(true);
   ckDirty=false;
 }
 function collapseCk(){
@@ -1058,7 +1076,7 @@ function collapseCk(){
   ckDidx=-1;ckMode='list';
   const pane=$('#ckDetail');pane.hidden=true;pane.innerHTML='';
   $('#ckList').hidden=false;
-  paintCkList();setBar();ckDirty=false;
+  paintCkList();setBar();setCkActs(false);ckDirty=false;
 }
 function backLab(){
   if(ckMode==='detail'){collapseCk();return}
