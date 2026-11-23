@@ -38,7 +38,10 @@ body{display:flex;flex-direction:column;min-height:100%;
 
 /* ---------- 查询页 ---------- */
 #s1{justify-content:flex-start;padding-top:10px}
-#s1 .foot{margin-top:auto}
+#s1 .foot{margin-top:0}
+/* 首页「放桌面」提示（v2.38）：一行小字，不可点 */
+#s1 .homesave{margin:auto 0 0;font-size:12px;line-height:1.35;color:#7b8794;font-weight:600;
+  letter-spacing:.2px;text-align:center;white-space:nowrap}
 .h1{font-size:clamp(24px,8.4vw,30px);font-weight:800;letter-spacing:1px;margin:0;line-height:1.3;
   text-align:center;color:#0b2545;white-space:nowrap}
 .hint{font-size:clamp(15px,4.4vw,18px);color:var(--ink2);margin:0;text-align:center}
@@ -366,6 +369,7 @@ html.gate body{visibility:hidden}
     <div class="sst"><b id="ssProf">—</b><span>专业</span></div>
     <div class="sst"><b id="ssLab">—</b><span>实训室</span></div>
   </div>
+  <p class="homesave" id="homeSave">想放桌面：用 Safari 打开 → 分享 → 添加到主屏幕</p>
   <div class="foot" id="foot"></div>
 </section>
 
@@ -506,7 +510,7 @@ const H=DATA.headers;
 const I={};H.forEach((h,i)=>I[h]=i);
 /* 原表表头与数据列整体错开一列：序号值在第 1 列(A)，表头却标在第 2 列(B)。 */
 if(H[0]==='' && H[1]==='序号') I['序号']=0;
-const VER='v2.37 · 2026-11-21';
+const VER='v2.38 · 2026-11-23';
 const DATA_DATE='2026-11-19';
 const FOOT=document.getElementById('foot');if(FOOT)FOOT.textContent='沙河教务 · '+VER;
 document.querySelectorAll('.ver').forEach(el=>{el.textContent=el.classList.contains('count')?VER+' · 共 '+ROWS.length+' 台':VER});
