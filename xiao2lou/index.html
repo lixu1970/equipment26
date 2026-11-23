@@ -1,0 +1,1525 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<title>设备核查转移操作系统</title>
+<style>
+:root{
+  --accent:#0b62d6;--accent-d:#0a52b5;--ink:#0d1117;--ink2:#4a5460;--line:#d8dee6;
+  --soft:#eef4fc;--warn:#b45309;
+  --pad:14px;--gap:10px;--btn-h:56px;--btn-fs:20px;--rad:14px;--fs-base:20px;
+  --shadow:0 2px 8px rgba(11,98,214,.18);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#fff;color:var(--ink);
+  font:var(--fs-base)/1.45 -apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",sans-serif;
+  -webkit-text-size-adjust:100%}
+body{display:flex;flex-direction:column;min-height:100%;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.screen{display:none;flex:1;flex-direction:column;padding:var(--pad);gap:var(--gap);min-height:0;overflow:hidden}
+.screen.on{display:flex}
+
+/* ---------- 按钮：一律蓝底白字 ---------- */
+.btn{height:var(--btn-h);border:2px solid var(--accent);border-radius:var(--rad);
+  background:var(--accent);color:#fff;font:inherit;font-size:var(--btn-fs);font-weight:700;
+  line-height:1;display:flex;align-items:center;justify-content:center;text-align:center;gap:6px;
+  padding:0 8px;cursor:pointer;box-shadow:var(--shadow);white-space:nowrap;
+  transition:background .15s,transform .08s}
+.btn:active{background:var(--accent-d);border-color:var(--accent-d);transform:scale(.98);box-shadow:none}
+.btn.primary,.btn.green,.btn.ghost{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn[disabled]{opacity:.5}
+.back{width:42px;height:42px;flex:0 0 auto;border:2px solid var(--accent);border-radius:12px;
+  background:var(--accent);color:#fff;font-size:23px;line-height:1;display:flex;align-items:center;
+  justify-content:center;cursor:pointer;box-shadow:var(--shadow)}
+.back:active{background:var(--accent-d);border-color:var(--accent-d)}
+.actions-row{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--gap);flex:0 0 auto}
+.actions-row .btn{height:calc(var(--btn-h) - 6px);font-size:clamp(14px,4.3vw,17px);padding:0 2px}
+
+/* ---------- 查询页 ---------- */
+#s1{justify-content:flex-start;padding-top:10px}
+#s1 .foot{margin-top:auto}
+.h1{font-size:clamp(24px,8.4vw,30px);font-weight:800;letter-spacing:1px;margin:0;line-height:1.3;
+  text-align:center;color:#0b2545;white-space:nowrap}
+.hint{font-size:clamp(15px,4.4vw,18px);color:var(--ink2);margin:0;text-align:center}
+input[type=text]{display:block;width:calc(100% - 22px);margin:0 auto;height:clamp(50px,8.2vh,60px);
+  border:2px solid var(--line);border-radius:12px;padding:0 12px;
+  font-size:clamp(20px,6.2vw,26px);font-weight:700;letter-spacing:1px;color:var(--ink);
+  background:#fff;outline:none;-webkit-appearance:none;text-align:center}
+input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgba(11,98,214,.35)}
+/* 查询键和下面三项同宽：分组卡片内边距 10px + 边框 1px，这里补 11px 内缩，左边界一致 */
+.home-acts{display:grid;grid-template-columns:1fr;gap:var(--gap);padding:0 11px}
+.pickgroup{background:#f5f9ff;border:1px solid #dbe7f8;border-radius:var(--rad);padding:10px;
+  display:flex;flex-direction:column;gap:8px}
+.ghd{font-size:14px;font-weight:800;color:#3f5a7d;letter-spacing:.5px}
+.gacts{display:grid;grid-template-columns:1fr;gap:8px}
+.sacts{display:grid;grid-template-columns:1.35fr 1fr;gap:8px;flex:0 0 auto}
+.ghd::before{content:'';display:inline-block;width:4px;height:14px;border-radius:2px;
+  background:var(--accent);margin-right:6px;vertical-align:-2px}
+.foot{font-size:12px;color:#7b8794;text-align:center;letter-spacing:.4px;font-weight:600}
+/* 首页汇总块（v2.33）：数字由内嵌数据现算，别写死 */
+.sumstat{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#f5f9ff;border:1px solid #dbe7f8;
+  border-radius:12px;padding:8px 10px;flex:0 0 auto}
+.sst{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-width:0}
+.sst b{font-size:22px;font-weight:800;color:var(--accent);line-height:1.15;white-space:nowrap;
+  letter-spacing:.2px;font-variant-numeric:tabular-nums;max-width:100%}
+.sst span{font-size:12px;color:#5b6b7f;font-weight:600;line-height:1.2;white-space:nowrap}
+.err{color:var(--warn);font-size:15px;font-weight:600;margin:0;text-align:center}
+.err:empty{display:none}
+
+/* ---------- 多结果 / 列表 ---------- */
+.pick,.locpick{display:flex;flex-direction:column;gap:var(--gap);overflow:auto;flex:1;min-height:0;padding:2px 0}
+.pick button,.locpick button{background:#fff;border:1px solid var(--line);border-left:5px solid var(--accent);
+  border-radius:12px;padding:11px 14px;font:inherit;color:var(--ink);cursor:pointer;
+  box-shadow:0 1px 3px rgba(13,17,23,.05)}
+.pick button{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left}
+.locpick button{display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left}
+.pick button:active,.locpick button:active{background:#f2f6fd}
+.pick button b{font-size:18px;font-weight:800;line-height:1.3}
+.pick button span{font-size:15px;color:var(--ink2)}
+.locpick b{font-size:17px;font-weight:700;line-height:1.3;word-break:break-all}
+.locpick span{font-size:14px;color:var(--ink2);flex:0 0 auto;font-weight:600}
+.locsearch{flex:0 0 auto}
+.locsearch input{width:min(100%,320px);margin:0 auto;text-align:left;height:46px;font-size:17px;font-weight:600}
+
+/* ---------- 详情 / 明细 ---------- */
+.top{display:flex;align-items:center;gap:var(--gap);flex:0 0 auto}
+.code{font-size:clamp(18px,5.4vw,23px);font-weight:800;letter-spacing:.4px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.grid{display:grid;grid-template-columns:1fr;gap:8px;overflow:auto;-webkit-overflow-scrolling:touch;
+  padding:2px 0;flex:1;min-height:0;align-content:start}
+.f{background:#f7f9fc;border:1px solid #e6ecf4;border-radius:12px;padding:8px 12px}
+.f dt{font-size:15px;color:#3f4a57;margin:0 0 2px;font-weight:700}
+.f dd{margin:0;font-size:clamp(17px,5.2vw,21px);font-weight:700;line-height:1.35;word-break:break-word}
+.f.note{background:var(--soft);border-color:#cfe0f7}
+.f.note dd{font-weight:600;white-space:pre-wrap}
+.ver{text-align:center;color:#607089;font-size:14px;font-weight:600;padding:4px 0 2px;letter-spacing:.2px}
+.empty{color:var(--ink2);font-size:17px}
+
+/* ---------- 备注框 ---------- */
+.devnote{width:100%;margin-top:6px;border:2px solid var(--line);border-radius:12px;
+  padding:10px 12px;font:inherit;font-size:17px;line-height:1.45;color:var(--ink);background:#fff;
+  resize:vertical;min-height:78px;cursor:text;-webkit-user-select:text;user-select:text}
+.devnote:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(11,98,214,.16);outline:none}
+@keyframes eqpulse{0%{box-shadow:0 0 0 0 rgba(11,98,214,.55)}70%{box-shadow:0 0 0 14px rgba(11,98,214,0)}
+  100%{box-shadow:0 0 0 0 rgba(11,98,214,0)}}
+.devnote.pulse{border-color:var(--accent);border-width:3px;animation:eqpulse 1.2s ease-out 2}
+.devnote.editing{border-color:var(--accent);box-shadow:0 0 0 3px rgba(11,98,214,.12)}
+.hintbar{margin:6px 0 0;padding:7px 10px;border-radius:10px;background:#fff6e5;border:1px solid #f0d3ae;
+  color:#8a5008;font-size:14px;font-weight:700;line-height:1.3}
+.hintbar[hidden]{display:none}
+.ckmsg{margin:6px 0 0;padding:7px 10px;border-radius:10px;background:#eaf6ec;border:1px solid #b8ddbe;
+  color:#1c6b28;font-size:14px;font-weight:700;line-height:1.3}
+.ckmsg.warn{background:#fff6e5;border-color:#f0d3ae;color:#8a5008}
+.ckmsg[hidden]{display:none}
+[hidden]{display:none!important}
+.detailpane{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;padding:2px 0}
+.detailpane>.grid{overflow:visible;flex:0 0 auto;grid-template-columns:1fr}
+.detailpane .devnote{margin-top:6px;background:#fff}
+.dtnhint{margin:6px 0 0;font-size:13px;font-weight:600;color:var(--ink2)}
+
+/* ---------- 场地设备列表 ---------- */
+#devTitle,#ckTitle{white-space:normal;line-height:1.25;font-size:18px}
+.devlist{display:flex;flex-direction:column;gap:var(--gap);overflow:auto;flex:1;min-height:0;padding:2px 0}
+.devrow{background:#f7f9fc;border:1px solid #e6ecf4;border-radius:12px;padding:9px 11px;flex:0 0 auto}
+.devtop{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;cursor:pointer}
+.devno{font-size:13px;font-weight:800;color:var(--accent);min-width:20px}
+.devname{font-size:17px;font-weight:700;flex:1;min-width:0;word-break:break-word}
+.devspec{font-size:13px;color:var(--ink2)}
+
+/* ---------- 盘点录入 ---------- */
+
+.stockout{flex:1;min-height:0;overflow:auto;font-size:16px;line-height:1.5;color:var(--ink);
+  background:#f7f9fc;border:1px solid #e6ecf4;border-radius:12px;padding:10px 12px}
+.stockout b{color:var(--accent)}
+.stockout .miss{color:var(--warn);font-weight:700}
+.small-hint{font-size:14px;color:var(--ink2);margin:0;line-height:1.35;text-align:center}
+
+/* ---------- 逐台核查 ---------- */
+.tag{display:inline-block;font-size:13px;font-weight:800;padding:2px 9px;border-radius:999px;
+  background:#e8f0fd;color:var(--accent);border:1px solid #c7dbfa;vertical-align:middle;white-space:nowrap}
+.tag.warn{background:#fdf1e3;color:var(--warn);border-color:#f0d3ae}
+.tag[data-act]{cursor:pointer}
+.pg{display:flex;align-items:center;gap:10px;flex:0 0 auto}
+.pgbar{flex:1;height:10px;border-radius:999px;background:#e7ecf3;overflow:hidden}
+.pgbar i{display:block;height:100%;width:0;background:var(--accent);transition:width .25s}
+.pgtxt{font-size:15px;font-weight:800;color:#3f4a57;white-space:nowrap}
+.ckscroll{overflow:auto;flex:1;min-height:0;padding:2px 0;-webkit-overflow-scrolling:touch}
+/* ---------- 三选一：未盘亏 / 盘亏 / 其他（v2.34） ---------- */
+.trio{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px}
+.trio .opt{height:40px;min-width:0;border:2px solid var(--line);border-radius:10px;background:#fff;
+  color:var(--ink);font:inherit;font-size:15px;font-weight:700;padding:0 2px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:3px;white-space:nowrap}
+.trio .opt:active{background:#f2f6fd}
+.trio .opt.on{background:#e8f0fd;border-color:var(--accent);color:var(--accent)}
+.trio .opt.on::before{content:'\2713';font-size:14px;font-weight:900}
+.othwrap{position:fixed;inset:0;z-index:70;background:rgba(8,16,28,.55);display:flex;
+  align-items:center;justify-content:center;padding:16px}
+.othbox{width:100%;max-width:260px;background:#fff;border-radius:14px;padding:12px;
+  box-shadow:0 12px 30px rgba(0,0,0,.28)}
+.othtitle{font-size:15px;font-weight:800;color:var(--ink);margin:0 0 8px}
+.othbox textarea{display:block;width:100%;height:78px;max-height:120px;overflow:auto;border:2px solid var(--line);
+  border-radius:10px;padding:8px 10px;font:inherit;font-size:15px;line-height:1.4;resize:none;color:var(--ink);
+  -webkit-user-select:text;user-select:text}
+.othbox textarea:focus{outline:none;border-color:var(--accent);box-shadow:inset 0 0 0 1px rgba(11,98,214,.3)}
+.othacts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.othacts .btn{height:40px;font-size:16px;box-shadow:none}
+.dtbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px}
+.dtbar span{font-size:14px;font-weight:700;color:var(--ink2)}
+.dtbar .btn{height:36px;font-size:15px;padding:0 14px;box-shadow:none}
+.actions-row.three{grid-template-columns:repeat(3,1fr)}
+.actions-row.two{grid-template-columns:1fr 1fr}
+
+/* ---------- 其他不确定可备注：备注说明 + 照片记录 ---------- */
+.phgrid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;flex:0 0 auto}
+.phgrid3 .btn{height:44px;font-size:clamp(14px,4.4vw,16px);padding:0 2px;white-space:nowrap}
+#phTxt{width:100%;height:92px;min-height:64px;border:2px solid var(--line);border-radius:12px;padding:9px 11px;
+  font:inherit;font-size:16px;line-height:1.4;color:var(--ink);background:#fff;resize:vertical;
+  -webkit-user-select:text;user-select:text;flex:0 0 auto}
+#phTxt:focus{border-color:var(--accent);outline:none;box-shadow:inset 0 0 0 1px rgba(11,98,214,.35)}
+.phfile{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;opacity:0;
+  overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;pointer-events:none}
+.phlist{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:8px;padding:2px 0}
+.phitem{display:flex;gap:10px;align-items:center;padding:8px;border:1px solid #e6ecf4;border-left:5px solid var(--accent);
+  border-radius:12px;background:#f7f9fc;cursor:pointer}
+.phthumb{width:54px;height:54px;border-radius:9px;object-fit:cover;flex:0 0 auto;background:#e7ecf3}
+.phmeta{flex:1;min-width:0}
+.phnote{font-size:14px;color:var(--ink);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.phtime{font-size:12px;color:#7b8794;font-weight:600}
+.phwarn{flex:0 0 auto;margin:0;padding:5px 9px;border-radius:10px;background:#fff6e5;border:1px solid #f0d3ae;
+  color:#8a5008;font-size:12px;line-height:1.3;font-weight:600}
+/* 二次选择：底部弹出 */
+.phsheet{position:absolute;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom));
+  background:#fff;border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:8px;
+  box-shadow:0 -6px 28px rgba(0,0,0,.35)}
+.phshtitle{font-size:14px;font-weight:800;color:#3f4a57;text-align:center;padding:2px 0 2px}
+.phsheet .btn{height:48px;font-size:17px}
+.phsheet .btn.cancel{background:#eef1f6;border-color:#eef1f6;color:#2d3a4b;box-shadow:none}
+/* 点开大图 */
+.phmodal{position:fixed;inset:0;z-index:60;background:rgba(8,16,28,.92);display:flex;flex-direction:column;
+  gap:8px;padding:10px calc(10px + env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) calc(10px + env(safe-area-inset-left))}
+.phmodal img{flex:1;min-height:0;width:100%;object-fit:contain;border-radius:10px;background:#000}
+.phmrow{display:flex;gap:8px}
+.phmrow select{flex:0 0 38%;height:40px;border-radius:10px;border:2px solid #2f4a70;background:#12233b;color:#fff;
+  font:inherit;font-size:15px;font-weight:700;padding:0 8px}
+.phmrow input{flex:1;min-width:0;height:40px;border-radius:10px;border:2px solid #2f4a70;background:#12233b;color:#fff;
+  font:inherit;font-size:15px;padding:0 10px}
+.phmodal textarea{height:56px;border-radius:10px;border:2px solid #2f4a70;background:#12233b;color:#fff;
+  font:inherit;font-size:15px;padding:8px 10px;resize:none}
+.phmacts{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.phmacts .btn{height:44px;font-size:16px;box-shadow:none}
+/* ---------- 中等屏：挤一点 ---------- */
+@media (max-height:640px){
+  :root{--gap:9px;--pad:12px;--btn-h:52px;--fs-base:19px;--btn-fs:19px}
+}
+/* ---------- 横屏 ---------- */
+@media (orientation:landscape){
+  :root{--pad:10px;--gap:8px;--btn-h:44px;--btn-fs:17px;--fs-base:17px}
+  #s1 .hint{display:none}
+  .h1{font-size:22px;letter-spacing:2px}
+  .sumstat{grid-template-columns:repeat(4,1fr);gap:5px;padding:4px 6px}
+  .sst b{font-size:16px}
+  .sst span{font-size:10px}
+  .home-acts{grid-template-columns:1fr}
+  .gacts{grid-template-columns:1fr 1fr 1fr}
+  .grid{grid-template-columns:1fr 1fr}
+  .f.wide{grid-column:1 / -1}
+  .detailpane>.grid{grid-template-columns:1fr 1fr}
+  .ver{font-size:12px;padding:2px 0}
+  .back{width:38px;height:38px;font-size:20px}
+  .locsearch input{height:40px;font-size:16px}
+  .devnote{min-height:60px}
+  .phwarn{display:none}
+  #phTxt{height:56px;min-height:56px}
+}
+/* ---------- 横屏：核查页分两栏（左看卡片，右按按钮） ---------- */
+@media (orientation:landscape){
+  #sck.on{display:grid;grid-template-columns:1.08fr .92fr;
+    grid-template-rows:auto auto 1fr auto;column-gap:10px;row-gap:6px}
+  #sck .top{grid-column:1 / -1;grid-row:1}
+  #sck .pg{grid-column:1 / -1;grid-row:2}
+  #ckList{grid-column:1;grid-row:3;min-height:0}
+  #ckDetail{grid-column:1;grid-row:3;min-height:0}
+  #sck .actions-row{grid-column:2;grid-row:3;align-self:start}
+  #sck .ver{grid-column:1 / -1;grid-row:4}
+}
+/* ---------- 很矮的横屏：再压一层 ---------- */
+@media (orientation:landscape) and (max-height:430px){
+  :root{--pad:8px;--gap:6px;--btn-h:38px;--btn-fs:15px;--fs-base:16px}
+  .h1{font-size:20px}
+  .actions-row .btn{font-size:14px}
+  .pgbar{height:8px}
+  .pgtxt{font-size:13px}
+  .phgrid3 .btn{height:36px;font-size:15px}
+  #phTxt{height:46px;min-height:46px;font-size:15px}
+  .phitem{padding:5px 7px;gap:8px}
+  .phthumb{width:44px;height:44px}
+  .sumstat{padding:3px 5px;gap:4px}
+  .sst b{font-size:14px}
+  .sst span{font-size:9.5px}
+}
+/* ---------- 停用开关（v2.37）：先藏住整页，问过 status.json 再放行 ---------- */
+html.gate body{visibility:hidden}
+#lockScreen{position:fixed;inset:0;z-index:2147483647;background:#fff;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:14px;padding:26px;text-align:center;color:var(--ink);
+  font:16px/1.55 -apple-system,BlinkMacSystemFont,"PingFang SC","Helvetica Neue",sans-serif;visibility:visible}
+#lockScreen h2{font-size:22px;font-weight:800;margin:0;color:#0b2545}
+#lockScreen p{font-size:14px;color:#4a5460;margin:0;max-width:280px;line-height:1.6;word-break:break-word}
+#lockScreen button{height:44px;min-width:120px;border-radius:12px;border:2px solid var(--accent);
+  background:var(--accent);color:#fff;font:inherit;font-size:16px;font-weight:700;padding:0 20px;cursor:pointer}
+.ownline{font-size:11px;color:#b45309;font-weight:700}
+</style>
+<script>
+/* 停用开关（v2.37）：整页先不可见 → 问 status.json → 放行 / 停用页。1.5 秒没答案就当未停用。 */
+(function(){
+  var OWNER_HASH='9ccb7b2ca7181ffedd0e6fdc840c1b32e7205831ecaf677756afeb6a00a9eb4b';
+  var LK='xl2.owner', root=document.documentElement;
+  root.className=(root.className?root.className+' ':'')+'gate';
+  function unlock(){root.classList.remove('gate')}
+  function isOwner(){try{return localStorage.getItem(LK)===OWNER_HASH}catch(e){return false}}
+  function setOwner(){try{localStorage.setItem(LK,OWNER_HASH)}catch(e){}}
+  function hex(buf){return Array.prototype.map.call(new Uint8Array(buf),function(b){return ('0'+b.toString(16)).slice(-2)}).join('')}
+  function sha(txt){
+    if(!(window.crypto&&window.crypto.subtle&&crypto.subtle.digest))return Promise.reject(new Error('no-subtle'));
+    return crypto.subtle.digest('SHA-256',new TextEncoder().encode(txt)).then(hex);
+  }
+  function stripParam(){
+    try{
+      var u=new URL(location.href);u.searchParams.delete('owner');
+      var q=u.searchParams.toString();
+      history.replaceState(null,'',u.pathname+(q?'?'+q:'')+u.hash);
+    }catch(e){}
+  }
+  function whenBody(fn){if(document.body)return fn();document.addEventListener('DOMContentLoaded',fn)}
+  function lock(msg){
+    root.classList.add('gate');
+    whenBody(function(){
+      var d=document.getElementById('lockScreen');
+      if(!d){
+        d=document.createElement('div');d.id='lockScreen';
+        d.innerHTML='<h2>本系统已停用</h2><p id="lockMsg"></p><button type="button" id="lockClose">关闭</button>';
+        document.body.appendChild(d);
+        d.querySelector('#lockClose').addEventListener('click',function(){try{window.close()}catch(e){}});
+      }
+      d.querySelector('#lockMsg').textContent=msg||'如需恢复请联系管理员。';
+    });
+  }
+  function markOwnerLocked(){
+    whenBody(function(){
+      var f=document.getElementById('foot');
+      if(!f||f.textContent.indexOf('仅管理员可用')>=0)return;
+      f.insertAdjacentHTML('beforeend','<br><span class="ownline">已停用 · 仅管理员可用</span>');
+    });
+  }
+  function check(){
+    var q=null;
+    try{q=new URLSearchParams(location.search).get('owner')}catch(e){}
+    var pre=Promise.resolve();
+    if(q){
+      pre=sha(q).then(function(h){if(h===OWNER_HASH)setOwner()}).catch(function(){}).then(stripParam);
+    }
+    return pre.then(function(){
+      var ctl=null;
+      try{ctl=new AbortController()}catch(e){}
+      var opt={cache:'no-store'};
+      if(ctl)opt.signal=ctl.signal;
+      var req=fetch('status.json?_='+Date.now(),opt)
+        .then(function(r){if(!r.ok)throw new Error('http');return r.json()})
+        .catch(function(){return null});
+      /* 1.5 秒没答案就当未停用：用 race，连请求卡死（不响应 abort）也能放行 */
+      var hang=new Promise(function(res){setTimeout(function(){try{ctl&&ctl.abort()}catch(e){}res(null)},1500)});
+      return Promise.race([req,hang]);
+    }).then(function(j){
+      if(!j)return unlock();                       /* 404 / 断网 / JSON 坏 → 当未停用 */
+      if(j.locked!==true)return unlock();          /* 没锁 → 正常 */
+      if(isOwner()){unlock();markOwnerLocked();return}  /* 自己人：照用，页脚加一行 */
+      lock(j.msg);
+    });
+  }
+  window.__eqGate={check:check,lock:lock,unlock:unlock,isOwner:isOwner,hash:OWNER_HASH};
+  check();
+  window.addEventListener('pageshow',function(e){if(e.persisted)check()});
+})();
+</script>
+</head>
+<body>
+
+<!-- 查询 -->
+<section class="screen on" id="s1">
+  <h1 class="h1" id="h1">设备核查转移操作系统</h1>
+  <input type="text" id="code" inputmode="text" autocomplete="off" autocorrect="off"
+         autocapitalize="characters" spellcheck="false" placeholder="初始编号">
+  <div class="err" id="err"></div>
+  <div class="home-acts">
+    <button class="btn" id="go">输入编号查询</button>
+  </div>
+  <div class="pickgroup">
+    <div class="gacts">
+      <button class="btn" id="locBtn">按专业筛选</button>
+      <button class="btn" id="labBtn">按场地筛选</button>
+      <button class="btn" id="stockBtn">其他不确定可备注</button>
+    </div>
+  </div>
+  <div class="sumstat" id="sumStat">
+    <div class="sst"><b id="ssTotal">—</b><span>总台数</span></div>
+    <div class="sst"><b id="ssMoney">—</b><span>总金额</span></div>
+    <div class="sst"><b id="ssProf">—</b><span>专业</span></div>
+    <div class="sst"><b id="ssLab">—</b><span>场地</span></div>
+  </div>
+  <div class="foot" id="foot"></div>
+</section>
+
+<!-- 多结果 -->
+<section class="screen" id="spick">
+  <div class="top"><button class="back" id="backPick">‹</button><div class="code" id="pickTitle">找到多台，选一台</div></div>
+  <div class="pick" id="pickList"></div>
+  <div class="ver"></div>
+</section>
+
+<!-- 详情 -->
+<section class="screen" id="s2">
+  <div class="top">
+    <button class="back" id="back">‹</button>
+    <div class="code" id="dCode">—</div>
+  </div>
+  <div class="grid" id="fields"></div>
+  <div class="actions-row three">
+    <button class="btn green" id="save">保存</button>
+    <button class="btn" id="dl">更新下载</button>
+    <button class="btn" id="back2">返回</button>
+  </div>
+  <div class="ver"></div>
+</section>
+
+<!-- 原存放地点列表 -->
+<section class="screen" id="sloc">
+  <div class="top">
+    <button class="back" id="backLoc">‹</button>
+    <div class="code" id="profTitle">按专业筛选</div>
+  </div>
+  <div class="locsearch"><input type="text" id="locq" placeholder="搜专业或关键字" autocomplete="off"></div>
+  <div class="locpick" id="locList"></div>
+  <div class="ver"></div>
+</section>
+
+<!-- 某场地的设备列表 -->
+<section class="screen" id="sdev">
+  <div class="top">
+    <button class="back" id="backDev">‹</button>
+    <div class="code" id="devTitle">—</div>
+  </div>
+  <div class="hintbar" id="devHint" hidden>点下面的备注框输入</div>
+  <div class="devlist" id="devList"></div>
+  <div class="detailpane" id="devDetail" hidden></div>
+  <div class="actions-row three">
+    <button class="btn green" id="saveAll">保存</button>
+    <button class="btn" id="dlAll">更新下载</button>
+    <button class="btn" id="backAll">返回</button>
+  </div>
+  <div class="ver"></div>
+</section>
+
+<!-- 某专业下的场地 -->
+<section class="screen" id="sploc">
+  <div class="top">
+    <button class="back" id="backPloc">‹</button>
+    <div class="code" id="plocTitle">—</div>
+  </div>
+  <div class="locsearch"><input type="text" id="plocq" placeholder="搜场地" autocomplete="off"></div>
+  <div class="locpick" id="plocList"></div>
+  <div class="ver"></div>
+</section>
+
+<!-- 其他不确定可备注：备注说明 + 照片记录 -->
+<section class="screen" id="sphoto">
+  <div class="top">
+    <button class="back" id="backPhoto">‹</button>
+    <div class="code">其他不确定可备注</div>
+  </div>
+
+  <div class="phgrid3">
+    <button class="btn" id="phTxtFocus">备注说明录入</button>
+    <button class="btn" id="phTxtSave">保存导出</button>
+    <button class="btn" id="phTxtClear">清屏</button>
+  </div>
+  <textarea id="phTxt" placeholder="点这里输入备注说明"></textarea>
+
+  <div class="phgrid3">
+    <button class="btn" id="phAdd">拍照/相册</button>
+    <button class="btn" id="phPicSave">保存导出</button>
+    <button class="btn" id="phPicClear">清屏</button>
+  </div>
+
+  <div class="phlist" id="phList"></div>
+
+  <p class="phwarn">照片只存在本机浏览器，清缓存或长期不用可能被清掉，重要的请及时导出。</p>
+  <div class="ver"></div>
+
+  <input type="file" id="phCamIn" class="phfile" accept="image/*" capture="environment">
+  <input type="file" id="phPickIn" class="phfile" accept="image/*" multiple>
+</section>
+
+<!-- 按实验室/场地核查：分组列表 -->
+<section class="screen" id="slab">
+  <div class="top">
+    <button class="back" id="backLab">‹</button>
+    <div class="code">按场地筛选</div>
+  </div>
+  <div class="locsearch"><input type="text" id="labq" placeholder="搜场地" autocomplete="off"></div>
+  <div class="locpick" id="labList"></div>
+  <div class="ver"></div>
+</section>
+
+<!-- 某场地下的专业 -->
+<section class="screen" id="slprof">
+  <div class="top">
+    <button class="back" id="backLprof">‹</button>
+    <div class="code" id="lprofTitle">—</div>
+  </div>
+  <div class="locsearch"><input type="text" id="lprofq" placeholder="搜专业" autocomplete="off"></div>
+  <div class="locpick" id="lprofList"></div>
+  <div class="ver"></div>
+</section>
+
+<!-- 逐台核查 -->
+<section class="screen" id="sck">
+  <div class="top">
+    <button class="back" id="backCk">‹</button>
+    <div class="code" id="ckTitle">—</div>
+  </div>
+  <div class="devlist" id="ckList"></div>
+  <div class="detailpane" id="ckDetail" hidden></div>
+  <div class="actions-row three">
+    <button class="btn green" id="saveCk">保存</button>
+    <button class="btn" id="dlCk">更新下载</button>
+    <button class="btn" id="backCk2">返回</button>
+  </div>
+  <div class="ver"></div>
+</section>
+
+<script>const DATA={"headers":["序号","资产编号","资产名称","品牌","规格型号","资产门类","资产分类名称","取得日期","数量","账面价值","资产用途","是否实训","资产状态","使用/管理部门","使用人/管理人/部门","所属专业","存放地点","初始编号","盘盈/盘亏","变动项1","变动项2","变动项3"],"rows":[["Z796","ZY2013000014","联合训练器","","奇胜3028c","设备","体育运动辅助设备","2013-09-23","1","5800","教学","否","在用","沙河校区","教务科","无","一号男生宿舍楼","371-02","无盘亏","","",""],["Z797","ZY2013000015","多功能健身器","","奇胜3022","设备","健身设备","2013-09-23","1","9500","教学","否","在用","沙河校区","教务科","无","一号男生宿舍楼","371-03","无盘亏","","",""],["503","1142030002008007787","音响","","常规","设备","其他音频设备","2003-11-26","1","1300","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","沙B796-01","无盘亏","","",""],["754","1142030002008008578","有源音箱","","常规","设备","音箱","2002-11-30","1","1300","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","沙796-01","无盘亏","","",""],["914","1142030002008009142","教师机","","常规","设备","台式计算机","2007-12-27","1","7850","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","780-1282","无盘亏","","",""],["939","1142030002008009181","服务器","","常规","设备","服务器","2007-12-27","1","12000","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","780-1283","无盘亏","","",""],["942","1142030002008009186","投影幕","","电动120寸","设备","投影幕","2007-12-27","1","2450","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","570-187","无盘亏","","",""],["943","1142030002008009187","功放","","常规","设备","音频功率放大器设备（功放设备）","2007-12-27","1","1980","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","796-180","无盘亏","","",""],["1747","1142030002008016065","成品S3750-48交换机","","1AI79","设备","交换设备","2008-04-18","1","15708","教学","是","在用","沙河校区","教务科","数控加工（数控铣工）专业","一号男生宿舍楼","782-33","无盘亏","","",""],["1749","1142030002008016067","成品S3750-48交换机","","1AI79","设备","交换设备","2008-04-18","1","15708","教学","是","在用","沙河校区","教务科","数控加工（数控铣工）专业","一号男生宿舍楼","782-35","无盘亏","","",""],["1753","1142030002008016071","成品S2026G交换机","","3T080","设备","交换设备","2008-04-18","1","3740","教学","是","在用","沙河校区","教务科","数控加工（数控铣工）专业","一号男生宿舍楼","782-39","无盘亏","","",""],["1755","1142030002008016073","成品S2026G交换机","","3T080","设备","交换设备","2008-04-18","1","3740","教学","是","在用","沙河校区","教务科","数控加工（数控铣工）专业","一号男生宿舍楼","782-41","无盘亏","","",""],["1758","1142030002008016120","服务器","","M2150G3/AK117A","设备","服务器","2008-06-03","1","12801.62","教学","是","在用","沙河校区","教务科","数控加工（数控铣工）专业","一号男生宿舍楼","780-1288","无盘亏","","",""],["1761","1142030002008016123","服务器","","M2150G3/AK117A","设备","服务器","2008-06-03","1","12801.62","教学","是","在用","沙河校区","教务科","数控加工（数控铣工）专业","一号男生宿舍楼","780-1291","无盘亏","","",""],["2102","1142030002008016630","服务器","","常规","设备","服务器","2008-07-25","1","49500","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","780-1609","无盘亏","","",""],["2103","1142030002008016631","服务器","","常规","设备","服务器","2008-07-25","1","49500","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","780-1610","无盘亏","","",""],["2104","1142030002008016632","彩色显示器","","常规","设备","液晶显示器","2008-07-25","1","3200","教学","否","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","780-1611","无盘亏","","",""],["2154","1142030002008016970","功放、音响、麦克","","国标","设备","音频功率放大器设备（功放设备）","2008-10-28","1","6800","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","796-184","无盘亏","","",""],["2155","1142030002008016971","功放、音响、麦克","","国标","设备","音频功率放大器设备（功放设备）","2008-10-28","1","6800","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","796-185","无盘亏","","",""],["2175","1142030002008017246","电脑","","Acer","设备","台式计算机","2008-11-26","1","4950","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-02","无盘亏","","",""],["2176","1142030002008017247","电脑","","Acer","设备","台式计算机","2008-11-26","1","4950","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-03","无盘亏","","",""],["2177","1142030002008017248","电脑","","Acer","设备","台式计算机","2008-11-26","1","4950","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-04","无盘亏","","",""],["2178","1142030002008017249","电脑","","Acer","设备","台式计算机","2008-11-26","1","4950","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-05","无盘亏","","",""],["2179","1142030002008017250","电脑","","Acer","设备","台式计算机","2008-11-26","1","4950","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-06","无盘亏","","",""],["2180","1142030002008017251","电脑","","Acer","设备","台式计算机","2008-11-26","1","4950","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-07","无盘亏","","",""],["2181","1142030002008017252","电脑","","Acer","设备","台式计算机","2008-11-26","1","4950","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-08","无盘亏","","",""],["2182","1142030002008017253","电脑","","Acer","设备","台式计算机","2008-11-26","1","4950","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-09","无盘亏","","",""],["2183","1142030002008017254","电脑","","Acer","设备","台式计算机","2008-11-26","1","4950","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-10","无盘亏","","",""],["2184","1142030002008017255","电脑","","Acer","设备","台式计算机","2008-11-26","1","4950","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-11","无盘亏","","",""],["2185","1142030002008017256","电脑","","Acer","设备","台式计算机","2008-11-26","1","4950","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-12","无盘亏","","",""],["2186","1142030002008017257","电脑","","Acer","设备","台式计算机","2008-11-26","1","4950","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-13","无盘亏","","",""],["2187","1142030002008017258","电脑","","Acer","设备","台式计算机","2008-11-26","1","4950","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-14","无盘亏","","",""],["2188","1142030002008017259","电脑","","Acer","设备","台式计算机","2008-11-26","1","4950","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-15","无盘亏","","",""],["2189","1142030002008017260","电脑","","Acer","设备","台式计算机","2008-11-26","1","4950","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-16","无盘亏","","",""],["2190","1142030002008017261","电脑","","Acer","设备","台式计算机","2008-11-26","1","4950","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-17","无盘亏","","",""],["2191","1142030002008017262","电脑","","Acer","设备","台式计算机","2008-11-26","1","4950","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-18","无盘亏","","",""],["2192","1142030002008017263","电脑","","4700N","设备","台式计算机","2008-11-26","1","5147.71","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-19","无盘亏","","",""],["2193","1142030002008017264","电脑","","4700N","设备","台式计算机","2008-11-26","1","5147.71","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-20","无盘亏","","",""],["2194","1142030002008017265","电脑","","4700N","设备","台式计算机","2008-11-26","1","5147.71","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-21","无盘亏","","",""],["2195","1142030002008017266","电脑","","4700N","设备","台式计算机","2008-11-26","1","5147.71","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-22","无盘亏","","",""],["2196","1142030002008017267","电脑","","4700N","设备","台式计算机","2008-11-26","1","5147.71","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-23","无盘亏","","",""],["2197","1142030002008017268","电脑","","4700N","设备","台式计算机","2008-11-26","1","5147.71","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-24","无盘亏","","",""],["2198","1142030002008017269","电脑","","4700N","设备","台式计算机","2008-11-26","1","5147.71","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-25","无盘亏","","",""],["2199","1142030002008017270","电脑","","4700N","设备","台式计算机","2008-11-26","1","5147.71","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-26","无盘亏","","",""],["2200","1142030002008017271","电脑","","4700N","设备","台式计算机","2008-11-26","1","5147.73","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-27","无盘亏","","",""],["2201","1142030002008017272","电脑","","4700D","设备","台式计算机","2008-11-26","1","6115.59","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-28","无盘亏","","",""],["2203","1142030002008017274","服务器","","常规","设备","服务器","2008-11-26","1","36390","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-30","无盘亏","","",""],["2206","1142030002008017277","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","5850","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-33","无盘亏","","",""],["2207","1142030002008017278","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","5880","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-34","无盘亏","","",""],["2208","1142030002008017279","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-35","无盘亏","","",""],["2209","1142030002008017280","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-36","无盘亏","","",""],["2210","1142030002008017281","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-37","无盘亏","","",""],["2211","1142030002008017282","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-38","无盘亏","","",""],["2212","1142030002008017283","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-39","无盘亏","","",""],["2213","1142030002008017284","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-40","无盘亏","","",""],["2214","1142030002008017285","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-41","无盘亏","","",""],["2215","1142030002008017286","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-42","无盘亏","","",""],["2216","1142030002008017287","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-43","无盘亏","","",""],["2217","1142030002008017288","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-44","无盘亏","","",""],["2218","1142030002008017289","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-45","无盘亏","","",""],["2219","1142030002008017290","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-46","无盘亏","","",""],["2220","1142030002008017291","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-47","无盘亏","","",""],["2221","1142030002008017292","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-48","无盘亏","","",""],["2222","1142030002008017293","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-49","无盘亏","","",""],["2223","1142030002008017294","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-50","无盘亏","","",""],["2224","1142030002008017295","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-51","无盘亏","","",""],["2225","1142030002008017296","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-52","无盘亏","","",""],["2226","1142030002008017297","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-53","无盘亏","","",""],["2227","1142030002008017298","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-54","无盘亏","","",""],["2228","1142030002008017299","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-55","无盘亏","","",""],["2229","1142030002008017300","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-56","无盘亏","","",""],["2230","1142030002008017301","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-57","无盘亏","","",""],["2231","1142030002008017302","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-58","无盘亏","","",""],["2232","1142030002008017303","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-59","无盘亏","","",""],["2233","1142030002008017304","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-60","无盘亏","","",""],["2234","1142030002008017305","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-61","无盘亏","","",""],["2235","1142030002008017306","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-62","无盘亏","","",""],["2236","1142030002008017307","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-63","无盘亏","","",""],["2237","1142030002008017308","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-64","无盘亏","","",""],["2238","1142030002008017309","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-65","无盘亏","","",""],["2239","1142030002008017310","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-66","无盘亏","","",""],["2240","1142030002008017311","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-67","无盘亏","","",""],["2241","1142030002008017312","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-68","无盘亏","","",""],["2242","1142030002008017313","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-69","无盘亏","","",""],["2243","1142030002008017314","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-70","无盘亏","","",""],["2244","1142030002008017315","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-71","无盘亏","","",""],["2245","1142030002008017316","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-72","无盘亏","","",""],["2246","1142030002008017317","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-73","无盘亏","","",""],["2247","1142030002008017318","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-74","无盘亏","","",""],["2248","1142030002008017319","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-75","无盘亏","","",""],["2249","1142030002008017320","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-76","无盘亏","","",""],["2250","1142030002008017321","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-77","无盘亏","","",""],["2251","1142030002008017322","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-78","无盘亏","","",""],["2252","1142030002008017323","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-79","无盘亏","","",""],["2253","1142030002008017324","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-80","无盘亏","","",""],["2254","1142030002008017325","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4920","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-81","无盘亏","","",""],["2255","1142030002008017326","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","5490","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-82","无盘亏","","",""],["2256","1142030002008017327","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","5490","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-83","无盘亏","","",""],["2257","1142030002008017328","多媒体切换器","","常规","设备","其他计算机","2008-11-26","1","17300","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-84","无盘亏","","",""],["2258","1142030002008017329","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4550","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-85","无盘亏","","",""],["2259","1142030002008017330","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4550","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-86","无盘亏","","",""],["2260","1142030002008017331","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4550","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-87","无盘亏","","",""],["2261","1142030002008017332","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","4550","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-88","无盘亏","","",""],["2262","1142030002008017333","电脑","","P4兼容机","设备","台式计算机","2008-11-26","1","5600","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","通780-89","无盘亏","","",""],["2481","1142030002008017626","网络防火墙系统V3","","NGFW4000","设备","其他信息安全设备","2008-12-17","1","39800","教学","否","在用","沙河校区","综合管理科","无","一号男生宿舍楼","通783-02","无盘亏","","",""],["3829","TY2011000217","联想学生机","","联想 M730E","设备","台式计算机","2011-12-30","1","5570","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","780-2424","无盘亏","","",""],["3830","TY2011000218","中控","","艾威康MCS-500B","设备","其他计算机","2011-12-30","1","2000","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","796-340","无盘亏","","",""],["4027","TY2012000033","计算机","","联想、启天M730E","设备","台式计算机","2012-02-21","1","5850","教学","否","在用","沙河校区","教务科","无","一号男生宿舍楼","780-2372","无盘亏","","",""],["4045","TY2012000051","功放","","湖山 XY100","设备","音频功率放大器设备（功放设备）","2012-02-21","1","2000","教学","否","在用","沙河校区","教务科","无","一号男生宿舍楼","796-337","无盘亏","","",""],["4063","TY2012000069","投影机","","富可视IN2194","设备","固定式","2012-02-21","1","11930","教学","否","在用","沙河校区","教务科","无","一号男生宿舍楼","570-227","无盘亏","","",""],["4081","TY2012000087","控制台","","1400*800*750","设备","其他计算机","2012-02-21","1","4100","教学","否","在用","沙河校区","教务科","无","一号男生宿舍楼","796-301","无盘亏","","",""],["4099","TY2012000105","中控","","艾威康MCS-500B","设备","其他计算机","2012-02-21","1","1650","教学","否","在用","沙河校区","教务科","无","一号男生宿舍楼","796-319","无盘亏","","",""],["4156","TY2012000163","服务器","","IBM 3550 M3(7944101","设备","服务器","2012-02-27","1","30000","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","780-2425","无盘亏","","",""],["4482","TY2012001876","机柜","","图腾 1.8m*0.6m*1m","设备","机柜","2012-11-28","1","2600","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","780-2632","无盘亏","","",""],["4483","TY2012001877","钢制多媒体桌","","图腾博达1.4m*0.7m*1m","设备","其他机房辅助设备","2012-11-28","1","2800","教学","是","待处置","沙河校区","教务科","电子商务专业","一号男生宿舍楼","601-01","无盘亏","","",""],["4916","TY2013002612","投影机","","富可视IN114","设备","固定式","2013-11-27","1","3800","教学","是","在用","沙河校区","教务科","数控加工（数控铣工）专业","一号男生宿舍楼","570-240","无盘亏","","",""],["4917","TY2013002613","投影机","","富可视IN114","设备","固定式","2013-11-27","1","3800","教学","是","在用","沙河校区","教务科","数控加工（数控铣工）专业","一号男生宿舍楼","570-241","无盘亏","","",""],["4918","TY2013002614","投影机","","富可视IN114","设备","固定式","2013-11-27","1","3800","教学","是","在用","沙河校区","教务科","数控加工（数控铣工）专业","一号男生宿舍楼","570-242","无盘亏","","",""],["4919","TY2013002615","投影机","","富可视IN114","设备","固定式","2013-11-27","1","3800","教学","是","在用","沙河校区","教务科","数控加工（数控铣工）专业","一号男生宿舍楼","570-243","无盘亏","","",""],["4920","TY2013002616","投影机","","富可视IN114","设备","固定式","2013-11-27","1","3800","教学","是","在用","沙河校区","教务科","数控机床装配与维修专业","一号男生宿舍楼","570-244","无盘亏","","",""]],"rowno":[5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124]};</script>
+<script>
+const ROWS=DATA.rows.filter(r=>!r.some(c=>typeof c==='string'&&c.trim().startsWith('=SUM')));
+const H=DATA.headers;
+const I={};H.forEach((h,i)=>I[h]=i);
+/* 原表表头与数据列整体错开一列：序号值在第 1 列(A)，表头却标在第 2 列(B)。 */
+if(H[0]==='' && H[1]==='序号') I['序号']=0;
+const VER='v1.0 · 2026-11-23';
+const DATA_DATE='2026-11-23';
+const FOOT=document.getElementById('foot');if(FOOT)FOOT.textContent='沙河教务 · '+VER;
+document.querySelectorAll('.ver').forEach(el=>{el.textContent=el.classList.contains('count')?VER+' · 共 '+ROWS.length+' 台':VER});
+const Q=H.indexOf('盘盈/盘亏');
+const get=(r,k)=>{const i=I[k];return (i>=0&&r[i]!=null)?String(r[i]):''};
+const $=s=>document.querySelector(s);
+/* 备注按「资产编号|初始编号|序号」存，原表更新换行也不会串位 */
+const KEY='xl2.notes.v1', OLDKEY='xl2.notes.old';
+function rkey(r,i){const a=get(r,'资产编号').trim(),b=get(r,'初始编号').trim(),c=get(r,'序号').trim();
+  const k=[a,b,c].filter(Boolean).join('|');return k||('row'+i)}
+let notes={};
+try{const old=JSON.parse(localStorage.getItem(OLDKEY)||'{}')||{};
+  Object.keys(old).forEach(k=>{const i=+k;if(ROWS[i])notes[rkey(ROWS[i],i)]=old[k]});}catch(e){}
+try{const cur2=JSON.parse(localStorage.getItem(KEY)||'{}')||{};
+  Object.keys(cur2).forEach(k=>{notes[k]=String(cur2[k]==null?'':cur2[k]).trim()});}catch(e){}
+const noteOf=(r,i)=>{const k=rkey(r,i);if(k in notes)return notes[k];const v=(r[Q]==null?'':String(r[Q])).trim();return v};
+/* 空串 = 显式清空：键存在就用它（哪怕是空），不再回落到表里原来的备注 */
+const setNote=(r,i,v)=>{notes[rkey(r,i)]=String(v==null?'':v).trim()};
+let cur=-1, dirty=false, editing=false;
+let curProf=null,curProfLoc=null;
+
+/* 初始编号索引（不区分大小写、去空格） */
+const idxMap={};
+ROWS.forEach((r,i)=>{
+  const k=get(r,'初始编号').trim().toUpperCase();
+  if(!k)return;(idxMap[k]=idxMap[k]||[]).push(i);
+});
+const idMap={};ROWS.forEach((r,i)=>{const k=get(r,'资产编号').trim();if(k)idMap[k]=i});
+
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));$(id).classList.add('on')}
+function toast(msg){$('#err').textContent=msg}
+
+function search(){
+  const raw=$('#code').value.trim();
+  const k=raw.toUpperCase();
+  if(!raw){toast('先输入初始编号');return}
+  toast('');
+  let hits=idxMap[k]||[];
+  if(!hits.length&&idMap[raw])hits=[idMap[raw]];
+  if(!hits.length){
+    // 模糊：包含匹配
+    hits=[];
+    ROWS.forEach((r,i)=>{const v=get(r,'初始编号').toUpperCase();if(v&&v.includes(k))hits.push(i)});
+  }
+  if(!hits.length){toast('没查到「'+raw+'」，核对编号或改用资产编号');return}
+  if(hits.length===1){openDetail(hits[0]);return}
+  $('#pickTitle').textContent='找到 '+hits.length+' 台，选一台';
+  $('#pickList').innerHTML=hits.map(i=>{
+    const r=ROWS[i];
+    return '<button data-i="'+i+'"><b>'+esc(get(r,'初始编号'))+' · '+esc(get(r,'资产名称'))+'</b>'
+      +'<span>'+esc(get(r,'序号'))+' · '+esc(get(r,'存放地点'))+' · '+esc(get(r,'规格型号'))+'</span></button>';
+  }).join('');
+  $('#pickList').querySelectorAll('button').forEach(b=>b.onclick=()=>openDetail(+b.dataset.i));
+  show('#spick');
+}
+
+function field(dt,dd,wide){return '<div class="f'+(wide?' wide':'')+'"><dt>'+dt+'</dt><dd>'+dd+'</dd></div>'}
+
+function openDetail(i){
+  cur=i;dirty=false;
+  $('#dCode').textContent=get(ROWS[i],'初始编号')||get(ROWS[i],'资产编号')||('序号 '+get(ROWS[i],'序号'));
+  paintS2();
+  show('#s2');
+}
+/* 查询详情：字段 + 三选一（改完点「保存」才写） */
+function paintS2(){
+  if(cur<0)return;
+  const i=cur;
+  $('#fields').innerHTML=detailFields(i,'s2Note')
+    +'<div class="wide">'+trioHtml(i)+'</div>'
+    +'<p class="dtnhint">改完点下面的「保存」</p>';
+}
+
+function saveS2(){
+  if(cur>=0){flushPending();try{localStorage.setItem(KEY,JSON.stringify(notes))}catch(e){}}
+  dirty=false;
+  flash('#save','已保存');
+}
+function flash(sel,txt){
+  const b=$(sel),old=b.textContent;b.textContent=txt;
+  setTimeout(()=>{b.textContent=(sel==='#save'?'保存':old)},1100);
+}
+function goBack(){
+  if(dirty&&!confirm('有未保存的选择，确定返回？'))return;
+  if(dirty)clearPending();
+  cur=-1;dirty=false;editing=false;
+  $('#code').value='';toast('');
+  show('#s1');
+  setTimeout(()=>$('#code').focus(),80);
+}
+
+/* ---------------- xlsx 导出（无依赖） ---------------- */
+const CRCT=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;
+  for(let k=0;k<8;k++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);t[n]=c>>>0}return t})();
+function crc32(u8){let c=0xFFFFFFFF;for(let i=0;i<u8.length;i++)c=CRCT[(c^u8[i])&0xFF]^(c>>>8);return (c^0xFFFFFFFF)>>>0}
+function escXml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+  .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'')}
+
+/* ------------- xlsx 导出：以原表为模板，只改「盘盈/盘亏」列（S） -------------
+   原表整包原样回写：styles / sharedStrings / cols / sheetViews / sheet2-3 /
+   docProps / [Content_Types] / rels 全部逐字节保留，只替换标注动过的那几行 S 单元格。 */
+const TPL_FILE='台账模板.xlsx';
+let tplCache=null;
+async function templateBuf(){
+  if(tplCache)return tplCache;
+  const r=await fetch(TPL_FILE,{cache:'no-store'});
+  if(!r.ok)throw new Error('取原表模板失败（HTTP '+r.status+'）');
+  tplCache=await r.arrayBuffer();
+  return tplCache;
+}
+function sheetRowOf(i){
+  const a=DATA.rowno;
+  return (a&&a.length===DATA.rows.length)?a[i]:(i+3);
+}
+const TDU=new TextDecoder('utf-8',{ignoreBOM:true});
+function zipParse(u8){
+  const dv=new DataView(u8.buffer,u8.byteOffset,u8.byteLength);
+  let e=-1,lim=Math.max(0,u8.length-66000);
+  for(let k=u8.length-22;k>=lim;k--){
+    if(u8[k]===0x50&&u8[k+1]===0x4b&&u8[k+2]===0x05&&u8[k+3]===0x06){e=k;break}
+  }
+  if(e<0)throw new Error('原表模板不是有效的 xlsx');
+  const n=dv.getUint16(e+10,true),cds=dv.getUint32(e+16,true);
+  const list=[];let p=cds;
+  for(let k=0;k<n;k++){
+    if(dv.getUint32(p,true)!==0x02014b50)throw new Error('原表模板的 zip 目录损坏');
+    const method=dv.getUint16(p+10,true);
+    const time=dv.getUint16(p+12,true),date=dv.getUint16(p+14,true);
+    const crc=dv.getUint32(p+16,true),csize=dv.getUint32(p+20,true),usize=dv.getUint32(p+24,true);
+    const nl=dv.getUint16(p+28,true),el=dv.getUint16(p+30,true),cl=dv.getUint16(p+32,true);
+    const lo=dv.getUint32(p+42,true);
+    const name=TDU.decode(u8.subarray(p+46,p+46+nl));
+    const lnl=dv.getUint16(lo+26,true),lel=dv.getUint16(lo+28,true);
+    const off=lo+30+lnl+lel;
+    list.push({name:name,method:method,time:time,date:date,crc:crc,csize:csize,usize:usize,
+      data:u8.subarray(off,off+csize)});
+    p+=46+nl+el+cl;
+  }
+  return list;
+}
+async function deflateRaw(bytes){
+  if(typeof CompressionStream==='undefined')return null;
+  const st=new Blob([bytes]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+  return new Uint8Array(await new Response(st).arrayBuffer());
+}
+async function inflateRaw(bytes){
+  if(typeof DecompressionStream==='undefined')throw new Error('这台设备的浏览器不支持解压原表');
+  const st=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+  return new Uint8Array(await new Response(st).arrayBuffer());
+}
+function patchS(xml,map){
+  let out=xml,changed=0;
+  for(const row in map){
+    const v=map[row];
+    const reSelf=new RegExp('<c r="S'+row+'"([^>]*)/>');
+    const reFull=new RegExp('<c r="S'+row+'"([^>]*)>[\\s\\S]*?</c>');
+    if(v===''){
+      /* 页面里被清空：模板原本有内容的，就改回自闭合空 cell，保留 s 等属性 */
+      if(reSelf.test(out))continue;   // 本来就是空 cell，不动
+      const m=reFull.exec(out);
+      if(m){
+        out=out.replace(reFull,function(x,a){return '<c r="S'+row+'"'+String(a).replace(/\st="[^"]*"/g,'')+'/>'});
+        changed++;
+      }
+      continue;
+    }
+    const cell=(attrs)=>'<c r="S'+row+'"'+String(attrs).replace(/\st="[^"]*"/g,'')
+      +' t="inlineStr"><is><t xml:space="preserve">'+escXml(v)+'</t></is></c>';
+    if(reSelf.test(out)){out=out.replace(reSelf,function(m,a){return cell(a)});changed++;continue}
+    if(reFull.test(out)){out=out.replace(reFull,function(m,a){return cell(a)});changed++}
+  }
+  return {xml:out,changed:changed};
+}
+function zipBuild(entries){
+  const enc=new TextEncoder(),parts=[],dir=[];let off=0;
+  for(const e of entries){
+    const nm=enc.encode(e.name),data=e.data,method=e.method||0;
+    const csize=(e.csize==null?data.length:e.csize);
+    const usize=(e.usize==null?data.length:e.usize);
+    const flag=/[^\x00-\x7F]/.test(e.name)?0x0800:0;   /* 中文文件名：置 UTF-8 标记位，免得解压乱码 */
+    const lh=new Uint8Array(30+nm.length),dv=new DataView(lh.buffer);
+    dv.setUint32(0,0x04034b50,true);dv.setUint16(4,20,true);dv.setUint16(6,flag,true);
+    dv.setUint16(8,method,true);dv.setUint16(10,e.time||0,true);dv.setUint16(12,e.date||0,true);
+    dv.setUint32(14,e.crc,true);dv.setUint32(18,csize,true);dv.setUint32(22,usize,true);
+    dv.setUint16(26,nm.length,true);dv.setUint16(28,0,true);lh.set(nm,30);
+    parts.push(lh,data);
+    const ch=new Uint8Array(46+nm.length),cv=new DataView(ch.buffer);
+    cv.setUint32(0,0x02014b50,true);cv.setUint16(4,20,true);cv.setUint16(6,20,true);
+    cv.setUint16(8,flag,true);cv.setUint16(10,method,true);cv.setUint16(12,e.time||0,true);cv.setUint16(14,e.date||0,true);
+    cv.setUint32(16,e.crc,true);cv.setUint32(20,csize,true);cv.setUint32(24,usize,true);
+    cv.setUint16(28,nm.length,true);cv.setUint32(42,off,true);ch.set(nm,46);
+    dir.push(ch);off+=lh.length+data.length;
+  }
+  const cdSize=dir.reduce((a,b)=>a+b.length,0);
+  const end=new Uint8Array(22),ev=new DataView(end.buffer);
+  ev.setUint32(0,0x06054b50,true);ev.setUint16(8,entries.length,true);ev.setUint16(10,entries.length,true);
+  ev.setUint32(12,cdSize,true);ev.setUint32(16,off,true);
+  return new Blob([...parts,...dir,end],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+}
+async function exportXlsx(){
+  const buf=await templateBuf();
+  const ents=zipParse(new Uint8Array(buf));
+  const map={};
+  /* 只写「动过的行」：没动过的行保持模板原样（仍然是无盘亏） */
+  ROWS.forEach((r,i)=>{const k=rkey(r,i);if(k in notes)map[sheetRowOf(i)]=notes[k]});
+  const out=[];
+  for(const e of ents){
+    if(e.name==='xl/worksheets/sheet1.xml'){
+      const xml=TDU.decode(await inflateRaw(e.data));
+      const patched=patchS(xml,map).xml;
+      const raw=new TextEncoder().encode(patched);
+      const comp=await deflateRaw(raw);
+      if(comp&&comp.length<raw.length){
+        out.push({name:e.name,method:8,time:e.time,date:e.date,
+          crc:crc32(raw),csize:comp.length,usize:raw.length,data:comp});
+      }else{
+        out.push({name:e.name,method:0,time:e.time,date:e.date,
+          crc:crc32(raw),csize:raw.length,usize:raw.length,data:raw});
+      }
+    }else{
+      out.push(e);
+    }
+  }
+  return zipBuild(out);
+}
+async function exportNow(){
+  const n=Object.keys(notes).length;
+  if(!n&&!confirm('现在一条备注都没有，导出的表和原表一样。先去核查页给设备点「未盘亏」或填盘盈/盘亏，再来下载。仍要下载吗？')){
+    return false;
+  }
+  try{
+    const blob=await exportXlsx();
+    download(blob,'男生宿舍楼1-小二楼-带标注-'+stamp()+'.xlsx');
+    return true;
+  }catch(err){
+    alert('导出失败：'+((err&&err.message)||err)
+      +'\n\n要能读取同目录的「'+TPL_FILE+'」。请通过网址打开本页，不能直接双击本地文件。');
+    return false;
+  }
+}
+function download(blob,name){
+  const a=document.createElement('a'),u=URL.createObjectURL(blob);
+  a.href=u;a.download=name;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(u);a.remove()},1500);
+}
+function stamp(){const d=new Date(),p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'-'+p(d.getHours())+p(d.getMinutes())}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+/* ---------------- 按所属专业（v2.26 起；原来按现存放位置） ---------------- */
+const NO_PROF='（未填专业）';
+const profMap={};
+ROWS.forEach((r,i)=>{const v=get(r,'所属专业').trim()||NO_PROF;(profMap[v]=profMap[v]||[]).push(i)});
+/* 台数多的在前；「（未填专业）」永远排最后 */
+const PROFS=Object.keys(profMap).sort((a,b)=>{
+  if(a===NO_PROF)return 1;
+  if(b===NO_PROF)return -1;
+  if(a==='无')return 1;
+  if(b==='无')return -1;
+  return profMap[b].length-profMap[a].length||a.localeCompare(b,'zh-Hans-CN');
+});
+
+function renderProfs(q){
+  const kw=(q||'').trim();
+  const list=PROFS.filter(v=>!kw||v.includes(kw));
+  $('#locList').innerHTML=list.length?list.map(v=>
+    '<button data-l="'+esc(v)+'"><b>'+esc(v)+'</b><span>'+profMap[v].length+' 台</span></button>').join('')
+    :'<div class="empty">没找到这个专业</div>';
+  $('#locList').querySelectorAll('button').forEach(b=>b.onclick=()=>openProfLoc(b.dataset.l));
+}
+function openProfs(){
+  $('#locq').value='';renderProfs('');
+  show('#sloc');
+}
+/* 某个专业下面的场地：台数降序，未填的场地垫底 */
+const NO_LOC='（未填存放位置）';
+const locOf=i=>get(ROWS[i],'存放地点').trim()||NO_LOC;
+function profLocs(prof){
+  const m={};
+  (profMap[prof]||[]).forEach(i=>{const v=locOf(i);(m[v]=m[v]||[]).push(i)});
+  return Object.keys(m).sort((a,b)=>{
+    if(a===NO_LOC)return 1;if(b===NO_LOC)return -1;
+    return m[b].length-m[a].length||a.localeCompare(b,'zh-Hans-CN');
+  }).map(k=>[k,m[k]]);
+}
+function renderProfLocs(){
+  const kw=($('#plocq').value||'').trim();
+  const list=profLocs(curProf).filter(x=>!kw||x[0].includes(kw));
+  $('#plocList').innerHTML=list.length?list.map(x=>{
+    const k=x[0],n=x[1].length;
+    const tag='<span class="tag" style="background:#eef1f6;color:#4a5460;border-color:#d8dee6">场地</span>';
+    return '<button data-l="'+esc(k)+'"><b>'+esc(k)+' '+tag+'</b><span>'+n+' 台</span></button>';
+  }).join(''):'<div class="empty">没找到这个场地</div>';
+  $('#plocList').querySelectorAll('button').forEach(b=>b.onclick=()=>openProfDev(curProf,b.dataset.l));
+}
+function openProfLoc(prof){
+  curProf=prof;curProfLoc=null;
+  $('#plocTitle').textContent=prof+' · 按场地';
+  $('#plocq').value='';renderProfLocs();
+  show('#sploc');
+}
+function openProfDev(prof,loc){
+  curProf=prof;curProfLoc=loc;editing=false;dirty=false;
+  devMode='list';devIdx=-1;$('#devDetail').hidden=true;$('#devDetail').innerHTML='';
+  $('#devList').hidden=false;
+  const idxs=(profMap[prof]||[]).filter(i=>locOf(i)===loc);
+  $('#devTitle').textContent=prof+' · '+loc+' · '+idxs.length+' 台';
+  $('#devList').innerHTML=idxs.map(i=>{
+    const r=ROWS[i];
+    return '<div class="devrow" data-row="'+i+'">'
+      +'<div class="devtop" data-i="'+i+'"><span class="devno">'+esc(get(r,'序号'))+'</span>'
+      +'<span class="devname">'+esc(get(r,'资产名称'))+'</span>'
+      +'<span class="devspec">'+esc(get(r,'初始编号')||'—')+'</span></div>'
+      +trioHtml(i)
+      +'</div>';
+  }).join('');
+  $('#devHint').hidden=true;
+  setDevActs(false);
+  show('#sdev');
+}
+
+/* ---------- 明细：场地页 / 核查页共用同一套字段（与初始编号详情页一致） ---------- */
+function detailFields(i,noteId){
+  const r=ROWS[i], v=noteOf(r,i);
+  return field('序号',esc(get(r,'序号')))
+   +field('资产名称',esc(get(r,'资产名称')),true)
+   +field('存放地点',esc(get(r,'存放地点')))
+   +field('规格型号',esc(get(r,'规格型号')))
+   +field('取得日期',esc(get(r,'取得日期')))
+   +field('账面价值',esc(get(r,'账面价值')))
+   +field('所属专业',esc(get(r,'所属专业')),true)
+   +field('初始编号',esc(get(r,'初始编号')||'—'))
+   +'<div class="f wide"><dt>盘盈/盘亏</dt><dd'+(noteId?' id="'+noteId+'"':'')+'>'+(v?esc(v):'<span class="empty">（未填写）</span>')+'</dd></div>'
+   +field('资产状态',esc(get(r,'资产状态')))
+   +field('使用部门',esc(get(r,'使用人/管理人/部门')));
+}
+/* 明细里不再放输入框：标注在列表/详情上用三个选项改 */
+function detailNoteHTML(){
+  return '<p class="dtnhint">标注请点下面的「未盘亏 / 盘亏 / 其他」改，改完点「保存」</p>';
+}
+let devMode='list',devIdx=-1,devScroll=0;
+/* 列表态底部只有「保存 / 更新下载」两键（左上 ‹ 就是返回）；明细态才把「返回」放回来 */
+function setDevActs(detail){
+  const b=$('#backAll');if(b)b.hidden=!detail;
+  const row=document.querySelector('#sdev .actions-row');
+  if(row){row.classList.toggle('two',!detail);row.classList.toggle('three',!!detail)}
+}
+function openDevDetail(i){
+  if(i==null||i<0)return;
+  devIdx=i;devMode='detail';
+  devScroll=$('#devList').scrollTop;
+  $('#devList').hidden=true;$('#devHint').hidden=true;
+  const pane=$('#devDetail');
+  pane.innerHTML='<div class="dtbar"><span>设备明细</span>'
+    +'<button class="btn" data-act="closedt">收起</button></div>'
+    +'<div class="grid">'+detailFields(i)+detailNoteHTML('devDNote',noteOf(ROWS[i],i))+'</div>';
+  pane.hidden=false;pane.scrollTop=0;
+  $('#devTitle').textContent=get(ROWS[i],'资产名称')||('序号 '+get(ROWS[i],'序号'));
+  setDevActs(true);
+  dirty=false;
+}
+function collapseDev(){
+  if(devIdx>=0){
+    const ta=$('#devDNote');
+    if(ta){
+      setNote(ROWS[devIdx],devIdx,ta.value);
+      try{localStorage.setItem(KEY,JSON.stringify(notes))}catch(e){}
+    }
+  }
+  devIdx=-1;devMode='list';
+  const pane=$('#devDetail');pane.hidden=true;pane.innerHTML='';
+  $('#devList').hidden=false;
+  $('#devTitle').textContent=(curProf||'')
+    +(curProfLoc?' · '+curProfLoc:'')
+    +' · '+((profMap[curProf]||[]).filter(i=>locOf(i)===curProfLoc).length)+' 台';
+  $('#devList').scrollTop=devScroll;
+  $('#devList').querySelectorAll('.trio').forEach(b=>{
+    const box=b.closest('.devrow');
+    if(box&&box.dataset.row!=null)paintTrio(b,+box.dataset.row);
+  });
+  setDevActs(false);
+  dirty=false;
+}
+function saveAll(){
+  if(curProf===null)return;
+  if(devMode==='detail'){
+    const ta=$('#devDNote');
+    if(ta)setNote(ROWS[devIdx],devIdx,ta.value);
+  }
+  flushPending();
+  try{localStorage.setItem(KEY,JSON.stringify(notes))}catch(e){}
+  dirty=false;editing=false;
+  $('#devList').querySelectorAll('.trio').forEach(b=>{
+    const box=b.closest('.devrow');
+    if(box&&box.dataset.row!=null)paintTrio(b,+box.dataset.row);
+  });
+  flash('#saveAll','已保存');
+}
+function backDev(){
+  if(devMode==='detail'){collapseDev();return}
+  if(dirty&&!confirm('有未保存的选择，确定返回？'))return;
+  editing=false;clearPending();
+  if(curProf){openProfLoc(curProf);return}   /* 设备 → 场地 */
+  show('#sloc');
+}
+
+
+/* ---------------- 按场地逐台查看（和设备列表页同一套） ---------------- */
+const TODAY=(()=>{const d=new Date(),p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())})();
+
+/* ---------- 三选一：未盘亏 / 盘亏 / 其他（专业进、场地进共用同一套，同一份 notes） ---------- */
+const OPT_IN='未盘亏', OPT_OUT='盘亏';
+/* 盘盈/盘亏里写的是什么结论：新写法「未盘亏」「盘亏」与老写法「无盘亏」「核查 日期 盘亏」一起认 */
+function noteConclusion(note){
+  const lines=String(note==null?'':note).split('\n').map(l=>l.trim());
+  if(lines.some(l=>l==='无盘亏'||l==='未盘亏'))return OPT_IN;
+  if(lines.some(l=>l==='盘亏'||/^核查 \d{4}-\d{2}-\d{2} (在位|不在位|未盘亏|盘亏)$/.test(l)))return OPT_OUT;
+  return '';
+}
+/* 显示用：三个选项谁被选中；不是结论的字一律落在「其他」 */
+function selFromNote(note){
+  const t=String(note==null?'':note).trim();
+  if(!t)return {v:'',txt:''};
+  const c=noteConclusion(t);
+  if(c)return {v:c,txt:''};
+  return {v:'other',txt:t};
+}
+/* 保存时真正写进「盘盈/盘亏」的字：未盘亏 / 盘亏 / 其他那段原文 */
+function noteForSel(sel){
+  if(!sel||!sel.v)return '';
+  if(sel.v===OPT_IN)return OPT_IN;
+  if(sel.v===OPT_OUT)return OPT_OUT;
+  return String(sel.txt==null?'':sel.txt).trim();
+}
+const pending={};                 /* i → {v,txt}：界面上选好了、还没点「保存」 */
+function selOf(i){return pending[i]||selFromNote(noteOf(ROWS[i],i))}
+function trioHtml(i){
+  const st=selOf(i);
+  const one=(v,t)=>'<button class="opt'+(st.v===v?' on':'')+'" data-act="pick" data-v="'+v+'" data-i="'+i+'">'+t+'</button>';
+  return '<div class="trio">'+one(OPT_IN,OPT_IN)+one(OPT_OUT,OPT_OUT)+one('other','其他')+'</div>';
+}
+function paintTrio(box,i){
+  if(!box)return;
+  const st=selOf(i);
+  box.querySelectorAll('.opt').forEach(b=>b.classList.toggle('on',b.dataset.v===st.v));
+}
+/* 「其他」的小输入框：最宽 260px，多行，最高 120px 内部滚动，预填这台当前的盘盈/盘亏 */
+function openOtherModal(prefill,onOk){
+  const old=document.getElementById('othModal');if(old)old.remove();
+  const w=document.createElement('div');w.className='othwrap';w.id='othModal';
+  w.innerHTML='<div class="othbox"><div class="othtitle">其他备注</div>'
+    +'<textarea id="othTxt" rows="4" placeholder="写点什么"></textarea>'
+    +'<div class="othacts"><button class="btn" data-oth="ok">确定</button>'
+    +'<button class="btn cancel" data-oth="cancel">取消</button></div></div>';
+  document.body.appendChild(w);
+  const ta=w.querySelector('#othTxt');ta.value=prefill||'';
+  const grow=()=>{ta.style.height='auto';ta.style.height=Math.max(78,Math.min(120,ta.scrollHeight+6))+'px'};
+  grow();ta.addEventListener('input',grow);
+  w.addEventListener('click',e=>{
+    const btn=e.target.closest('[data-oth]');
+    if(!btn){if(e.target===w)w.remove();return}
+    if(btn.dataset.oth==='ok'){const v=ta.value;w.remove();onOk(v)}
+    else w.remove();
+  });
+  setTimeout(()=>{try{ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length)}catch(e){}},60);
+}
+/* 点选项：只改界面，不写 notes；不立刻落表 */
+function pickOpt(i,v,anchor){
+  if(v==='other'){
+    openOtherModal(noteOf(ROWS[i],i),txt=>{
+      pending[i]={v:'other',txt:String(txt==null?'':txt).trim()};
+      dirty=true;ckDirty=true;
+      paintTrio(anchor&&anchor.closest('.trio'),i);
+    });
+    return;
+  }
+  pending[i]={v:v,txt:''};
+  dirty=true;ckDirty=true;
+  paintTrio(anchor&&anchor.closest('.trio'),i);
+}
+/* 丢掉界面上没保存的选择（点「返回」并确认时用） */
+function clearPending(){
+  Object.keys(pending).forEach(k=>delete pending[k]);
+  dirty=false;ckDirty=false;
+}
+/* 把界面上选好的写进 notes（只由「保存 / 更新下载」调） */
+function flushPending(){
+  const ks=Object.keys(pending);if(!ks.length)return 0;
+  ks.forEach(k=>{const i=+k;setNote(ROWS[i],i,noteForSel(pending[k]))});
+  try{localStorage.setItem(KEY,JSON.stringify(notes))}catch(e){}
+  return ks.length;
+}
+
+/* 分组：按「存放地点」 */
+const PEND={}, GRP={};
+ROWS.forEach((r,i)=>{
+  let loc=get(r,'存放地点').trim();
+  if(!loc)loc='（未填存放位置）';
+  (GRP[loc]=GRP[loc]||[]).push(i);
+});
+const GNAMES=Object.keys(GRP).sort((a,b)=>
+  GRP[b].length-GRP[a].length||a.localeCompare(b,'zh-Hans-CN'));
+let gLoc=null,gProf=null,gIdx=[],ckDirty=false;
+/* 已查 = 这台的盘盈/盘亏有内容（未盘亏 / 盘亏 / 其他都算查过了）；两条路径同一个判定 */
+const isChk=(r,i)=>!!noteOf(r,i).trim();
+function gDone(idxs){let n=0;idxs.forEach(i=>{if(isChk(ROWS[i],i))n++});return n}
+
+function renderLabs(q){
+  const kw=(q||'').trim();
+  const list=GNAMES.filter(v=>!kw||v.indexOf(kw)>=0);
+  $('#labList').innerHTML=list.length?list.map(v=>{
+    const idxs=GRP[v],done=gDone(idxs);
+    return '<button data-l="'+esc(v)+'"><b>'+esc(v)
+      +'</b><span>'+idxs.length+' 台</span></button>';
+  }).join(''):'<div class="empty">没找到这个场地</div>';
+  $('#labList').querySelectorAll('button').forEach(b=>b.onclick=()=>openLabProfs(b.dataset.l));
+}
+function openLab(){$('#labq').value='';renderLabs('');show('#slab')}
+/* 某场地下面的专业：台数降序，「（未填专业）」垫底 */
+function labProfs(lab){
+  const m={};
+  (GRP[lab]||[]).forEach(i=>{const v=get(ROWS[i],'所属专业').trim()||NO_PROF;(m[v]=m[v]||[]).push(i)});
+  return Object.keys(m).sort((a,b)=>{
+    if(a===NO_PROF)return 1;if(b===NO_PROF)return -1;
+    if(a==='无')return 1;if(b==='无')return -1;
+    return m[b].length-m[a].length||a.localeCompare(b,'zh-Hans-CN');
+  }).map(k=>[k,m[k]]);
+}
+function renderLabProfs(){
+  const kw=($('#lprofq').value||'').trim();
+  const list=labProfs(gLoc).filter(x=>!kw||x[0].includes(kw));
+  $('#lprofList').innerHTML=list.length?list.map(x=>
+    '<button data-p="'+esc(x[0])+'"><b>'+esc(x[0])+'</b><span>'+x[1].length+' 台</span></button>').join('')
+    :'<div class="empty">没找到这个专业</div>';
+  $('#lprofList').querySelectorAll('button').forEach(b=>b.onclick=()=>openCkSub(gLoc,b.dataset.p));
+}
+function openLabProfs(lab){
+  gLoc=lab;gProf=null;ckDirty=false;
+  $('#lprofTitle').textContent=lab+' · 按专业';
+  $('#lprofq').value='';renderLabProfs();
+  show('#slprof');
+}
+/* 这个场地 + 这个专业的设备 */
+function openCkSub(lab,prof){
+  gLoc=lab;gProf=prof;
+  gIdx=(GRP[lab]||[]).filter(i=>(get(ROWS[i],'所属专业').trim()||NO_PROF)===prof);
+  ckDirty=false;ckMode='list';ckDidx=-1;
+  const pn=$('#ckDetail');if(pn){pn.hidden=true;pn.innerHTML=''}
+  $('#ckList').hidden=false;
+  renderCk();show('#sck');
+}
+function openCk(l){
+  gLoc=l;gProf=null;gIdx=(GRP[l]||[]).slice();ckDirty=false;
+  ckMode='list';ckDidx=-1;
+  const pn=$('#ckDetail');if(pn){pn.hidden=true;pn.innerHTML=''}
+  $('#ckList').hidden=false;
+  renderCk();show('#sck');
+}
+/* 这一页和设备列表页同一套：一次把这一组（场地 + 专业）的设备全列出来，每台一张卡 + 三选一 */
+function setBar(){
+  const f=$('#pgFill'),t=$('#pgTxt');
+  if(f||t){const done=gDone(gIdx);
+    if(f)f.style.width=(gIdx.length?done*100/gIdx.length:0)+'%';
+    if(t)t.textContent=done+'/'+gIdx.length+' 已标'}
+}
+/* 同设备列表页：列表态两键（左上 ‹ 返回），明细态三键 */
+function setCkActs(detail){
+  const b=$('#backCk2');if(b)b.hidden=!detail;
+  const row=document.querySelector('#sck .actions-row');
+  if(row){row.classList.toggle('two',!detail);row.classList.toggle('three',!!detail)}
+}
+function renderCk(){
+  if(!gIdx.length)return;
+  $('#ckTitle').innerHTML=esc(gLoc)+(gProf?' · '+esc(gProf):'');
+  setBar();
+  $('#ckList').innerHTML=gIdx.map(i=>{
+    const r=ROWS[i];
+    return '<div class="devrow" data-row="'+i+'">'
+      +'<div class="devtop" data-i="'+i+'"><span class="devno">'+esc(get(r,'序号'))+'</span>'
+      +'<span class="devname">'+esc(get(r,'资产名称'))+'</span>'
+      +'<span class="devspec">'+esc(get(r,'初始编号')||'—')+'</span></div>'
+      +trioHtml(i)
+      +'</div>';
+  }).join('');
+  paintCkList();
+  setCkActs(false);
+}
+function paintCkList(){
+  $('#ckList').querySelectorAll('.trio').forEach(b=>{
+    const box=b.closest('.devrow');
+    if(box&&box.dataset.row!=null)paintTrio(b,+box.dataset.row);
+  });
+}
+let ckMode='list',ckDidx=-1;
+function openCkDetail(i){
+  if(i==null||i<0)return;
+  if(ckMode==='detail')return;
+  ckDidx=i;ckMode='detail';
+  const pane=$('#ckDetail');
+  pane.innerHTML='<div class="dtbar"><span>设备明细</span>'
+    +'<button class="btn" data-act="closedt">收起</button></div>'
+    +'<div class="grid">'+detailFields(i)+detailNoteHTML('ckDNote',noteOf(ROWS[i],i))+'</div>';
+  pane.hidden=false;pane.scrollTop=0;
+  $('#ckList').hidden=true;
+  setCkActs(true);
+  ckDirty=false;
+}
+function collapseCk(){
+  if(ckDidx>=0){
+    const ta=$('#ckDNote');
+    if(ta){
+      setNote(ROWS[ckDidx],ckDidx,ta.value);
+      try{localStorage.setItem(KEY,JSON.stringify(notes))}catch(e){}
+    }
+  }
+  ckDidx=-1;ckMode='list';
+  const pane=$('#ckDetail');pane.hidden=true;pane.innerHTML='';
+  $('#ckList').hidden=false;
+  paintCkList();setBar();setCkActs(false);ckDirty=false;
+}
+function backLab(){
+  if(ckMode==='detail'){collapseCk();return}
+  if(ckDirty&&!confirm('有未保存的选择，确定返回？'))return;
+  ckDirty=false;dirty=false;
+  clearPending();
+  if(gProf){renderLabProfs();show('#slprof');return}   /* 核查 → 本室专业列表 */
+  renderLabs($('#labq').value);show('#slab');
+}
+
+/* ---------------- 其他不确定可备注：备注说明（localStorage）+ 照片记录（IndexedDB） ---------------- */
+const PH_DB='xl2.photos', PH_STORE='recs';
+const PHP_DRAFT='xl2.photo.draft.v1', PHP_HIST='xl2.photo.hist.v1';
+let phDBP=null, phURLs=[], phMem=[], phMemMode=false;
+const phSession=new Set();          /* 本次打开页面后新加的照片 id，用于「单独导出」 */
+let phSessionStart=Date.now();
+
+function phOpenDB(){
+  if(phDBP)return phDBP;
+  phDBP=new Promise((res,rej)=>{
+    let rq;
+    try{rq=indexedDB.open(PH_DB,1)}catch(e){rej(e);return}
+    rq.onupgradeneeded=()=>{const db=rq.result;if(!db.objectStoreNames.contains(PH_STORE))db.createObjectStore(PH_STORE,{keyPath:'id'})};
+    rq.onsuccess=()=>res(rq.result);
+    rq.onerror=()=>rej(rq.error||new Error('打开本地相册失败'));
+  });
+  return phDBP;
+}
+function phStore(mode){return phOpenDB().then(db=>db.transaction(PH_STORE,mode).objectStore(PH_STORE))}
+function phUseMem(reason){
+  if(!phMemMode){phMemMode=true;console.warn('照片存储降到内存：',reason)}
+}
+async function phAll(){
+  if(phMemMode)return phMem.slice();
+  try{
+    const st=await phStore('readonly');
+    return await new Promise((res,rej)=>{const r=st.getAll();r.onsuccess=()=>res(r.result||[]);r.onerror=()=>rej(r.error)});
+  }catch(e){phUseMem(e);return phMem.slice()}
+}
+async function phPut(rec){
+  if(phMemMode){phMem=phMem.filter(r=>r.id!==rec.id).concat([rec]);return}
+  try{
+    const st=await phStore('readwrite');
+    await new Promise((res,rej)=>{const r=st.put(rec);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)});
+  }catch(e){phUseMem(e);phMem=phMem.filter(r=>r.id!==rec.id).concat([rec])}
+}
+async function phDelete(id){
+  if(phMemMode){phMem=phMem.filter(r=>r.id!==id);return}
+  try{
+    const st=await phStore('readwrite');
+    await new Promise((res,rej)=>{const r=st.delete(id);r.onsuccess=()=>res();r.onerror=()=>rej(r.error)});
+  }catch(e){phUseMem(e);phMem=phMem.filter(r=>r.id!==id)}
+}
+const phId=()=>Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,6);
+const phP2=n=>String(n).padStart(2,'0');
+const phTime=t=>{const d=new Date(t);return phP2(d.getMonth()+1)+'-'+phP2(d.getDate())+' '+phP2(d.getHours())+':'+phP2(d.getMinutes())};
+const phStamp=t=>{const d=new Date(t);return d.getFullYear()+phP2(d.getMonth()+1)+phP2(d.getDate())+'-'+phP2(d.getHours())+phP2(d.getMinutes())};
+
+/* ---- 文字：本机草稿 + 历次「添加更新」的存档 ---- */
+function phTxtLoad(){try{$('#phTxt').value=localStorage.getItem(PHP_DRAFT)||''}catch(e){}}
+function phTxtDraft(){try{localStorage.setItem(PHP_DRAFT,$('#phTxt').value)}catch(e){}}
+function phHist(){try{return JSON.parse(localStorage.getItem(PHP_HIST)||'[]')||[]}catch(e){return []}}
+function phHistSave(a){try{localStorage.setItem(PHP_HIST,JSON.stringify(a))}catch(e){}}
+function phTxtExport(mode){
+  const cur=($('#phTxt').value||'').trim();
+  let entries;
+  if(mode==='add'){
+    const h=phHist();
+    if(cur)h.push({t:Date.now(),text:cur});
+    phHistSave(h);entries=h.slice();
+    if(!entries.length){alert('还没有内容，先写点东西再导出');return}
+  }else{
+    if(!cur){alert('还没有内容，先写点东西再导出');return}
+    entries=[{t:Date.now(),text:cur}];
+  }
+  const body=entries.map(e=>'【'+new Date(e.t).toLocaleString('zh-CN')+'】\n'+e.text).join('\n\n------------------------------\n\n');
+  download(new Blob(['\ufeff'+body],{type:'text/plain;charset=utf-8'}),'备注说明-'+phStamp(Date.now())+'.txt');
+}
+
+/* ---- 照片 ---- */
+function phPickImg(file){
+  return new Promise((res,rej)=>{
+    const u=URL.createObjectURL(file),img=new Image();
+    img.onload=()=>{URL.revokeObjectURL(u);res(img)};
+    img.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('这张图打不开'))};
+    img.src=u;
+  });
+}
+async function phCompress(file){
+  const img=await phPickImg(file);
+  const max=1600;
+  const iw=img.naturalWidth||img.width, ih=img.naturalHeight||img.height;
+  const k=Math.min(1,max/Math.max(iw,ih));
+  const w=Math.max(1,Math.round(iw*k)),h=Math.max(1,Math.round(ih*k));
+  const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+  cv.getContext('2d').drawImage(img,0,0,w,h);
+  const blob=await new Promise(r=>cv.toBlob(r,'image/jpeg',0.82));
+  return blob||file;
+}
+async function phAddFiles(list){
+  try{
+    const arr=[...list].filter(f=>f&&f.type&&/^image\//.test(f.type));
+    if(!arr.length){alert('没拿到图片，重试一次或改用相册');return}
+    if(!window.indexedDB)phUseMem('no indexedDB');
+    const note=($('#phTxt').value||'').trim();
+    let n=0,base=Date.now(),lastErr='';
+    for(const f of arr){
+      let blob=f;
+      try{blob=await phCompress(f)}catch(e){lastErr=e&&e.message||String(e)}
+      const rec={id:phId()+'-'+n,note,time:base+n*1000,img:blob};
+      try{await phPut(rec);phSession.add(rec.id);n++}
+      catch(e){lastErr=e&&e.message||String(e)}
+    }
+    await phRender();
+    if(!n){alert('没能存下这张照片：'+(lastErr||'原因不明'));return}
+    const lb=$('#phAdd'),old=lb.textContent;
+    lb.textContent='已存 '+n+' 张';
+    setTimeout(()=>{lb.textContent=old},1200);
+  }catch(e){alert('加照片出错：'+(e&&e.message||e))}
+}
+let phRenderSeq=0;
+async function phRender(){
+  const seq=++phRenderSeq;
+  const recs=(await phAll()).sort((a,b)=>b.time-a.time);
+  if(seq!==phRenderSeq)return;          /* 有更新的渲染在跑，这次丢弃，免得两头像互相撤 URL */
+  const old=phURLs;phURLs=[];
+  if(!recs.length){
+    $('#phList').innerHTML='<div class="empty">还没有照片，点「拍照/相册」加一张</div>';
+    old.forEach(u=>{try{URL.revokeObjectURL(u)}catch(e){}});
+    return;
+  }
+  const html=recs.map(r=>{
+    const u=URL.createObjectURL(r.img);phURLs.push(u);
+    return '<div class="phitem" data-id="'+esc(r.id)+'">'
+      +'<img class="phthumb" src="'+u+'" alt="">'
+      +'<div class="phmeta"><span class="phtime">'+phTime(r.time)+'</span>'
+      +'<div class="phnote">'+esc((r.note||'（无备注说明）').slice(0,30))+'</div></div></div>';
+  }).join('');
+  $('#phList').innerHTML=html;
+  $('#phList').querySelectorAll('.phitem').forEach(el=>el.onclick=()=>phDetail(el.dataset.id));
+  /* 先换上新图再撤销旧 URL，避免正显示的那张被打断 */
+  old.forEach(u=>{try{URL.revokeObjectURL(u)}catch(e){}});
+}
+async function phDetail(id){
+  const recs=await phAll();const r=recs.find(x=>x.id===id);if(!r)return;
+  const u=URL.createObjectURL(r.img);
+  const m=document.createElement('div');m.className='phmodal';m.id='phModal';
+  m.innerHTML='<img src="'+u+'" alt="">'
+    +'<textarea id="phmNote" placeholder="备注说明（可改）">'+esc(r.note||'')+'</textarea>'
+    +'<div class="phmacts"><button class="btn" id="phmSave">保存</button>'
+    +'<button class="btn" id="phmDel">删除这张</button>'
+    +'<button class="btn cancel" id="phmClose">关闭</button></div>';
+  document.body.appendChild(m);
+  const close=()=>{try{URL.revokeObjectURL(u)}catch(e){};m.remove();phRender()};
+  $('#phmClose').onclick=close;
+  $('#phmSave').onclick=async()=>{r.note=($('#phmNote').value||'').trim();await phPut(r);close()};
+  $('#phmDel').onclick=async()=>{
+    if(!confirm('删掉这张照片？只删本机这张，已导出的不受影响。'))return;
+    await phDelete(r.id);phSession.delete(r.id);close();
+  };
+}
+function phDos(ms){
+  const d=new Date(ms);
+  const time=(((d.getHours()&31)<<11)|((d.getMinutes()&63)<<5)|((d.getSeconds()/2)|0))&0xFFFF;
+  const date=((((d.getFullYear()-1980)&127)<<9)|(((d.getMonth()+1)&15)<<5)|(d.getDate()&31))&0xFFFF;
+  return {time,date};
+}
+const phSafe=s=>String(s||'').replace(/[\\/:*?"<>|\s]+/g,'').slice(0,20);
+const phCsv=v=>{const t=String(v==null?'':v);return /[",\r\n]/.test(t)?'"'+t.replace(/"/g,'""')+'"':t};
+async function phExportZip(mode){
+  const all=(await phAll()).sort((a,b)=>b.time-a.time);
+  const recs=(mode==='session')?all.filter(r=>phSession.has(r.id)):all;
+  if(!recs.length){alert(mode==='session'?'这次还没有新加的照片':'还没有照片，先拍一张再导出');return}
+  const ents=[],rows=[['备注','文件名','时间']];
+  for(let k=0;k<recs.length;k++){
+    const r=recs[k];
+    const nm='photos/'+String(k+1).padStart(3,'0')+'_'+phStamp(r.time)+'.jpg';
+    const buf=new Uint8Array(await r.img.arrayBuffer());
+    const dt=phDos(r.time);
+    ents.push({name:nm,method:0,time:dt.time,date:dt.date,data:buf,crc:crc32(buf),csize:buf.length,usize:buf.length});
+    rows.push([r.note||'',nm,new Date(r.time).toLocaleString('zh-CN')]);
+  }
+  const csv='\ufeff'+rows.map(r=>r.map(phCsv).join(',')).join('\r\n');
+  const cb=new TextEncoder().encode(csv);
+  const dd=phDos(Date.now());
+  ents.push({name:'备注.csv',method:0,time:dd.time,date:dd.date,data:cb,crc:crc32(cb),csize:cb.length,usize:cb.length});
+  const raw=await zipBuild(ents).arrayBuffer();
+  download(new Blob([raw],{type:'application/zip'}),'账外记录-'+phStamp(Date.now())+'.zip');
+}
+async function phClearPics(){
+  const recs=await phAll();
+  if(!recs.length){alert('现在没有照片');return}
+  if(!confirm('清屏会把 '+recs.length+' 张照片一起删掉，已导出的不受影响。确定清掉吗？'))return;
+  for(const r of recs)await phDelete(r.id);
+  phSession.clear();
+  await phRender();
+}
+/* ---- 二次选择：底部弹出（拍照/相册用 <label for> 原生唤起，iOS 才弹得出来） ---- */
+function phMenu(title,items){
+  const m=document.createElement('div');m.className='phmodal';m.id='phMenu';
+  m.innerHTML='<div class="phsheet"><div class="phshtitle">'+esc(title)+'</div>'
+    +items.map((it,i)=>it.for
+      ?'<label class="btn" for="'+it.for+'" data-i="'+i+'">'+esc(it.label)+'</label>'
+      :'<button class="btn" data-i="'+i+'">'+esc(it.label)+'</button>').join('')
+    +'<button class="btn cancel" data-i="-1">取消</button></div>';
+  document.body.appendChild(m);
+  m.querySelectorAll('[data-i]').forEach(el=>{
+    el.onclick=()=>{
+      const i=+el.dataset.i;
+      /* label 要点：先删掉面板，label 已不在文档里，浏览器就不再跑它的默认动作（唤起 input[type=file]），
+         表现就是点了没反应。所以 label 必须让默认动作先走，再异步收面板。 */
+      if(el.tagName==='LABEL'){
+        setTimeout(()=>{if(document.body.contains(m))m.remove()},0);
+        return;
+      }
+      m.remove();
+      setTimeout(()=>{if(i>=0&&items[i]&&items[i].act)items[i].act()},10);
+    };
+  });
+  m.onclick=e=>{if(e.target===m)m.remove()};
+}
+function openPhoto(){
+  phTxtLoad();
+  phRender();
+  show('#sphoto');
+}
+/* 事件 */
+$('#go').onclick=search;
+$('#code').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();search()}});
+$('#save').onclick=saveS2;
+$('#dl').onclick=async()=>{
+  if(cur>=0){flushPending();try{localStorage.setItem(KEY,JSON.stringify(notes))}catch(e){}}
+  dirty=false;paintS2();
+  if(await exportNow())flash('#dl','已下载');
+};
+$('#s2').addEventListener('click',e=>{
+  const opt=e.target.closest('.trio .opt');
+  if(!opt)return;
+  pickOpt(+opt.dataset.i,opt.dataset.v,opt);
+  const nv=$('#s2Note');
+  if(nv){const v=noteForSel(selOf(+opt.dataset.i));nv.innerHTML=v?esc(v):'<span class="empty">（未填写）</span>'}
+});
+$('#back').onclick=goBack;
+$('#back2').onclick=goBack;
+$('#backPick').onclick=()=>{show('#s1');setTimeout(()=>$('#code').focus(),80)};
+$('#locBtn').onclick=openProfs;
+$('#backPloc').onclick=()=>{renderProfs($('#locq').value);show('#sloc')};
+$('#plocq').addEventListener('input',()=>renderProfLocs());
+$('#backLprof').onclick=()=>{renderLabs($('#labq').value);show('#slab')};
+$('#lprofq').addEventListener('input',()=>renderLabProfs());
+$('#backLoc').onclick=()=>{show('#s1');setTimeout(()=>$('#code').focus(),80)};
+$('#locq').addEventListener('input',e=>renderProfs(e.target.value));
+$('#backDev').onclick=backDev;
+$('#backAll').onclick=backDev;
+$('#devList').addEventListener('click',e=>{
+  const opt=e.target.closest('.trio .opt');
+  if(opt){pickOpt(+opt.dataset.i,opt.dataset.v,opt);return}
+  const t=e.target.closest('.devtop');
+  if(t&&t.dataset.i!=null)openDevDetail(+t.dataset.i);
+});
+$('#devDetail').addEventListener('click',e=>{
+  if(devMode!=='detail')return;
+  if(e.target.closest('[data-act="closedt"]')||e.target.closest('.dtbar'))collapseDev();
+});
+$('#saveAll').onclick=saveAll;
+$('#dlAll').onclick=async()=>{if(dirty)saveAll();if(await exportNow())flash('#dlAll','已下载')};
+let autoT=0;
+function autoSave(){
+  clearTimeout(autoT);
+  autoT=setTimeout(()=>{
+    try{localStorage.setItem(KEY,JSON.stringify(notes))}catch(e){}
+    dirty=false;ckDirty=false;
+  },350);
+}
+$('#devList').addEventListener('input',e=>{
+  if(!e.target.classList.contains('devnote'))return;
+  const i=+e.target.dataset.i;setNote(ROWS[i],i,e.target.value);
+  dirty=true;autoSave();
+});
+$('#devDetail').addEventListener('input',e=>{
+  if(e.target.id!=='devDNote')return;
+  if(devIdx>=0)setNote(ROWS[devIdx],devIdx,e.target.value);
+  dirty=true;autoSave();
+});
+$('#ckDetail').addEventListener('input',e=>{
+  if(e.target.id!=='ckDNote')return;
+  if(ckDidx>=0)setNote(ROWS[ckDidx],ckDidx,e.target.value);
+  ckDirty=true;autoSave();
+});
+$('#labBtn').onclick=openLab;
+$('#stockBtn').onclick=openPhoto;
+$('#backPhoto').onclick=()=>{show('#s1');setTimeout(()=>$('#code').focus(),80)};
+
+/* 备注说明 */
+$('#phTxtFocus').onclick=()=>{const t=$('#phTxt');t.focus();t.setSelectionRange(t.value.length,t.value.length)};
+$('#phTxtClear').onclick=()=>{$('#phTxt').value='';phTxtDraft();$('#phTxt').focus()};
+$('#phTxt').addEventListener('input',phTxtDraft);
+$('#phTxtSave').onclick=()=>phMenu('文字导出',[
+  {label:'添加更新（含以前保存的）',act:()=>phTxtExport('add')},
+  {label:'单独导出（只导本次）',act:()=>phTxtExport('only')}
+]);
+
+/* 照片 */
+$('#phAdd').onclick=()=>phMenu('加照片',[
+  {label:'拍照',for:'phCamIn'},
+  {label:'从相册选',for:'phPickIn'}
+]);
+$('#phPicSave').onclick=()=>phMenu('照片导出',[
+  {label:'添加更新（本机全部照片）',act:()=>phExportZip('all')},
+  {label:'单独导出（只导本次新加的）',act:()=>phExportZip('session')}
+]);
+$('#phPicClear').onclick=phClearPics;
+
+/* 先把选中的文件复制成普通数组，再清空 input —— 直接读 e.target.files 再清空，Safari 里这个列表会跟着变空 */
+function phOnPick(e){
+  const box=e.target;
+  const files=box.files?[...box.files]:[];
+  box.value='';
+  const mm=document.getElementById('phMenu');if(mm)mm.remove(); /* 双保险：残留面板一起收掉 */
+  if(files.length)phAddFiles(files);
+  else alert('没选到照片（选择器返回空），再点一次。');
+}
+$('#phCamIn').addEventListener('change',phOnPick);
+$('#phPickIn').addEventListener('change',phOnPick);
+
+$('#backLab').onclick=()=>{show('#s1');setTimeout(()=>$('#code').focus(),80)};
+$('#labq').addEventListener('input',e=>renderLabs(e.target.value));
+$('#backCk').onclick=backLab;
+$('#backCk2').onclick=backLab;
+/* 这一页的口径和设备列表页一样：点「保存」才写，切页不自动写 */
+$('#saveCk').onclick=()=>{
+  if(ckMode==='detail'){
+    const ta=$('#ckDNote');
+    if(ta)setNote(ROWS[ckDidx],ckDidx,ta.value);
+  }
+  flushPending();
+  try{localStorage.setItem(KEY,JSON.stringify(notes))}catch(e){}
+  dirty=false;ckDirty=false;
+  paintCkList();setBar();
+  flash('#saveCk','已保存');
+};
+$('#dlCk').onclick=async()=>{
+  if(ckMode==='detail'){const ta=$('#ckDNote');if(ta)setNote(ROWS[ckDidx],ckDidx,ta.value)}
+  flushPending();
+  try{localStorage.setItem(KEY,JSON.stringify(notes))}catch(e){}
+  dirty=false;ckDirty=false;
+  paintCkList();setBar();
+  if(await exportNow())flash('#dlCk','已下载');
+};
+$('#sck').addEventListener('click',e=>{
+  const opt=e.target.closest('.trio .opt');
+  if(opt){pickOpt(+opt.dataset.i,opt.dataset.v,opt);return}
+  if(e.target.closest('[data-act="closedt"]')||(ckMode==='detail'&&e.target.closest('.dtbar'))){collapseCk();return}
+});
+/* 点卡片顶行（序号/名称/初始编号）打开明细，明细上「收起」回来 */
+$('#ckList').addEventListener('click',e=>{
+  const t=e.target.closest('.devtop');
+  if(t&&t.dataset.i!=null)openCkDetail(+t.dataset.i);
+});
+/* 字多的地方（大标题、长按钮）：按实际宽度缩字号，保证不换行、不截断 */
+function fitOne(el,min){
+  if(!el)return;
+  el.style.fontSize='';
+  let fs=parseFloat(getComputedStyle(el).fontSize)||20,guard=0;
+  while(el.scrollWidth>el.clientWidth&&fs>(min||10)&&guard++<60){fs-=0.5;el.style.fontSize=fs.toFixed(1)+'px'}
+}
+function fitTexts(){
+  fitOne($('#h1'),14);
+  fitOne($('#stockBtn'),10);
+  fitOne($('#go'),12);
+  ['#ssTotal','#ssMoney','#ssProf','#ssLab'].forEach(s=>fitOne($(s),13));
+}
+/* 首页汇总块（v2.33）：四个数全部从内嵌数据现算，换母表自动跟着走，别写死 */
+function renderSum(){
+  let money=0;
+  const profs=new Set(), locs=new Set();
+  ROWS.forEach(r=>{
+    const v=parseFloat(get(r,'账面价值').replace(/[^0-9.]/g,''));
+    if(isFinite(v))money+=v;
+    const p=get(r,'所属专业').trim();
+    if(p&&p!=='无')profs.add(p);
+    const l=get(r,'存放地点').trim();
+    if(l)locs.add(l);
+  });
+  const set=(s,t)=>{const el=$(s);if(el)el.textContent=t};
+  set('#ssTotal',ROWS.length+' 台');
+  set('#ssMoney','¥'+(money/10000).toFixed(1)+' 万');
+  set('#ssProf',profs.size+' 个');
+  set('#ssLab',locs.size+' 个');
+}
+renderSum();
+fitTexts();
+window.addEventListener('resize',fitTexts);
+setTimeout(()=>$('#code').focus(),120);
+</script>
+</body>
+</html>
