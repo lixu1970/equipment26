@@ -81,7 +81,7 @@ input[type=text]:focus{border-color:var(--accent);box-shadow:inset 0 0 0 1px rgb
 .pick button b{font-size:18px;font-weight:800;line-height:1.3}
 .pick button span{font-size:15px;color:var(--ink2)}
 .locpick b{font-size:17px;font-weight:700;line-height:1.3;word-break:break-all}
-.locpick span{font-size:14px;color:var(--ink2);flex:0 0 auto;font-weight:600}
+.locpick span{font-size:14px;color:var(--ink2);flex:0 0 auto;font-weight:600;white-space:nowrap}
 .locsearch{flex:0 0 auto}
 .locsearch input{width:min(100%,320px);margin:0 auto;text-align:left;height:46px;font-size:17px;font-weight:600}
 
@@ -413,6 +413,7 @@ html.gate body{visibility:hidden}
     <button class="back" id="backDev">‹</button>
     <div class="code" id="devTitle">—</div>
   </div>
+  <div class="pg" id="devPg"><div class="pgbar"><i id="devPgFill"></i></div><div class="pgtxt" id="devPgTxt">0/0 已查</div></div>
   <div class="hintbar" id="devHint" hidden>点下面的备注框输入</div>
   <div class="devlist" id="devList"></div>
   <div class="detailpane" id="devDetail" hidden></div>
@@ -510,7 +511,7 @@ const H=DATA.headers;
 const I={};H.forEach((h,i)=>I[h]=i);
 /* 原表表头与数据列整体错开一列：序号值在第 1 列(A)，表头却标在第 2 列(B)。 */
 if(H[0]==='' && H[1]==='序号') I['序号']=0;
-const VER='v2.38 · 2026-11-23';
+const VER='v2.39 · 2026-11-24';
 const DATA_DATE='2026-11-19';
 const FOOT=document.getElementById('foot');if(FOOT)FOOT.textContent='沙河教务 · '+VER;
 document.querySelectorAll('.ver').forEach(el=>{el.textContent=el.classList.contains('count')?VER+' · 共 '+ROWS.length+' 台':VER});
@@ -805,7 +806,7 @@ function renderProfs(q){
   const kw=(q||'').trim();
   const list=PROFS.filter(v=>!kw||v.includes(kw));
   $('#locList').innerHTML=list.length?list.map(v=>
-    '<button data-l="'+esc(v)+'"><b>'+esc(v)+'</b><span>'+profMap[v].length+' 台</span></button>').join('')
+    '<button data-l="'+esc(v)+'"><b>'+esc(v)+'</b><span>'+profMap[v].length+' 台'+doneTxt(profMap[v])+'</span></button>').join('')
     :'<div class="empty">没找到这个专业</div>';
   $('#locList').querySelectorAll('button').forEach(b=>b.onclick=()=>openProfLoc(b.dataset.l));
 }
@@ -831,7 +832,7 @@ function renderProfLocs(){
     const k=x[0],n=x[1].length;
     const tag=LABRE.test(k)?'<span class="tag">实训室</span>'
       :'<span class="tag" style="background:#eef1f6;color:#4a5460;border-color:#d8dee6">场地</span>';
-    return '<button data-l="'+esc(k)+'"><b>'+esc(k)+' '+tag+'</b><span>'+n+' 台</span></button>';
+    return '<button data-l="'+esc(k)+'"><b>'+esc(k)+' '+tag+'</b><span>'+n+' 台'+doneTxt(x[1])+'</span></button>';
   }).join(''):'<div class="empty">没找到这个场地</div>';
   $('#plocList').querySelectorAll('button').forEach(b=>b.onclick=()=>openProfDev(curProf,b.dataset.l));
 }
@@ -857,7 +858,7 @@ function openProfDev(prof,loc){
       +'</div>';
   }).join('');
   $('#devHint').hidden=true;
-  setDevActs(false);
+  setDevActs(false);setDevBar();
   show('#sdev');
 }
 
@@ -878,6 +879,13 @@ function detailNoteHTML(id,val){
    +'</dd><p class="dtnhint">点框即可输入，写完点「保存」</p></div>';
 }
 let devMode='list',devIdx=-1,devScroll=0;
+/* 设备列表页进度条（v2.39）：与核查列表页同一条，位置在标题下、第一张卡上 */
+function devIdxs(){return (profMap[curProf]||[]).filter(i=>locOf(i)===curProfLoc)}
+function setDevBar(){
+  const a=devIdxs(),done=gDone(a),f=$('#devPgFill'),t=$('#devPgTxt');
+  if(f)f.style.width=(a.length?done*100/a.length:0)+'%';
+  if(t)t.textContent=done+'/'+a.length+' 已查';
+}
 /* 列表态底部只有「保存 / 更新下载」两键（左上 ‹ 就是返回）；明细态才把「返回」放回来 */
 function setDevActs(detail){
   const b=$('#backAll');if(b)b.hidden=!detail;
@@ -917,7 +925,7 @@ function collapseDev(){
     const box=b.closest('.devrow');
     if(box&&box.dataset.row!=null)paintTrio(b,+box.dataset.row);
   });
-  setDevActs(false);
+  setDevActs(false);setDevBar();
   dirty=false;
 }
 function saveAll(){
@@ -933,7 +941,7 @@ function saveAll(){
     const box=b.closest('.devrow');
     if(box&&box.dataset.row!=null)paintTrio(b,+box.dataset.row);
   });
-  flash('#saveAll','已保存');
+  setDevBar();flash('#saveAll','已保存');
 }
 function backDev(){
   if(devMode==='detail'){collapseDev();return}
@@ -1049,6 +1057,8 @@ let gLoc=null,gProf=null,gIdx=[],ckDirty=false;
 /* 已查 = 这台的后备注有内容（未盘亏 / 盘亏 / 其他都算查过了）；两条路径同一个判定 */
 const isChk=(r,i)=>!!noteOf(r,i).trim();
 function gDone(idxs){let n=0;idxs.forEach(i=>{if(isChk(ROWS[i],i))n++});return n}
+/* 列表右侧「N 台 · 已查 M」（v2.39）：M 由现成判定现算；0 台已查时不显示，与实训室列表页同一口径 */
+const doneTxt=a=>{const n=gDone(a);return n?' · 已查 '+n:''}
 
 function renderLabs(q){
   const kw=(q||'').trim();
@@ -1077,7 +1087,7 @@ function renderLabProfs(){
   const kw=($('#lprofq').value||'').trim();
   const list=labProfs(gLoc).filter(x=>!kw||x[0].includes(kw));
   $('#lprofList').innerHTML=list.length?list.map(x=>
-    '<button data-p="'+esc(x[0])+'"><b>'+esc(x[0])+'</b><span>'+x[1].length+' 台</span></button>').join('')
+    '<button data-p="'+esc(x[0])+'"><b>'+esc(x[0])+'</b><span>'+x[1].length+' 台'+doneTxt(x[1])+'</span></button>').join('')
     :'<div class="empty">没找到这个专业</div>';
   $('#lprofList').querySelectorAll('button').forEach(b=>b.onclick=()=>openCkSub(gLoc,b.dataset.p));
 }
